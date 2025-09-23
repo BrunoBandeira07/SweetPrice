@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "header-background",
+      "description": "A background image of pastel-colored macarons.",
+      "imageUrl": "https://images.unsplash.com/photo-1561406186-9fe502481035?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxiYWtlcnklMjBwYXN0ZWx8ZW58MHx8fHwxNzU4NjU4NTgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bakery pastel"
+    }
+  ]
 }
