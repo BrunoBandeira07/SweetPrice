@@ -46,8 +46,6 @@ const ImportSheetDialog = ({ onIngredientsImported }: ImportSheetDialogProps) =>
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isPending) return;
-
     if (state.success && state.data) {
         onIngredientsImported(state.data);
         setIsOpen(false);
@@ -58,7 +56,8 @@ const ImportSheetDialog = ({ onIngredientsImported }: ImportSheetDialogProps) =>
             description: state.error,
         });
     }
-  }, [state, isPending, onIngredientsImported, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
