@@ -125,7 +125,7 @@ export default function RecipesPage() {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {recipe.items.map(item => (
+                                                    {Array.isArray(recipe.items) && recipe.items.map(item => (
                                                         <TableRow key={item.id}>
                                                             <TableCell>{item.name}</TableCell>
                                                             <TableCell><Badge variant="secondary">{getItemTypeLabel(item.type)}</Badge></TableCell>
