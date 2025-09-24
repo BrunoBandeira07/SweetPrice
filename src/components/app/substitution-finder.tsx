@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react-dom';
 import { HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,7 +37,7 @@ function SubmitButton() {
 }
 
 const SubstitutionFinder = ({ ingredient, amount }: { ingredient: Ingredient; amount: number }) => {
-  const [state, formAction] = useFormState(getSubstitutions, initialState);
+  const [state, formAction] = useActionState(getSubstitutions, initialState);
 
   return (
     <Dialog>

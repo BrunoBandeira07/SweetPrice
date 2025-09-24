@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { FileDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { importFromSheet } from '@/app/actions';
 import type { Ingredient } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -42,7 +41,7 @@ function SubmitButton() {
 }
 
 const ImportSheetDialog = ({ onIngredientsImported }: ImportSheetDialogProps) => {
-  const [state, formAction] = useFormState(importFromSheet, initialState);
+  const [state, formAction] = useActionState(importFromSheet, initialState);
   const { toast } = useToast();
 
   useEffect(() => {
