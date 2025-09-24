@@ -45,19 +45,20 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
 
   // Computed values
   const selectedIngredient = useMemo(() => ingredients.find((i) => i.id === selectedIngredientId), [selectedIngredientId, ingredients]);
+  const allEquipments = useMemo(() => ({ ...electricEquipments, ...gasEquipments }), [electricEquipments, gasEquipments]);
+
   const selectedEquipment = useMemo(() => {
     if (!selectedEquipmentKey) return null;
-    const allEquipments = { ...electricEquipments, ...gasEquipments };
     const equip = allEquipments[selectedEquipmentKey as keyof typeof allEquipments];
     return equip ? { key: selectedEquipmentKey, ...equip } : null;
-  }, [selectedEquipmentKey, electricEquipments, gasEquipments]);
+  }, [selectedEquipmentKey, allEquipments]);
 
 
   const addRecipeItem = (type: 'ingredient' | 'labor' | 'equipment') => {
     let newItem: RecipeItem | null = null;
 
     if (type === 'ingredient' && selectedIngredient && ingredientQuantity > 0) {
-      const cost = (selectedIngredient.unitCost || 0) * ingredientQuantity;
+      const cost = (selectedIngredient.unitCost || 0) * ingredientQuantity * (selectedIngredient.lossFactor || 1);
       newItem = {
         id: new Date().toISOString(),
         type: 'ingredient',
@@ -153,8 +154,6 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
     setIsSaveDialogOpen(false);
   };
 
-  const allEquipments = useMemo(() => ({ ...electricEquipments, ...gasEquipments }), [electricEquipments, gasEquipments]);
-
   return (
     <Card className="shadow-lg h-full">
       <CardHeader>
@@ -179,7 +178,7 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
               <DialogHeader>
                 <DialogTitle>Salvar Receita</DialogTitle>
                 <DialogDescription>Dê um nome para sua receita para salvá-la no seu Livro de Receitas.</DialogDescription>
-              </Header>
+              </DialogHeader>
               <div className="space-y-2">
                 <Label htmlFor="recipeName">Nome da Receita</Label>
                 <Input 
