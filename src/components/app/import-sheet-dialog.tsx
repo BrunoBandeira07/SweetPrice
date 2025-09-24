@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useActionState } from 'react';
+import { useEffect, useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { FileDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,12 +41,16 @@ function SubmitButton() {
 }
 
 const ImportSheetDialog = ({ onIngredientsImported }: ImportSheetDialogProps) => {
-  const [state, formAction] = useActionState(importFromSheet, initialState);
+  const [state, formAction, isPending] = useActionState(importFromSheet, initialState);
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    if (isPending) return;
+
     if (state.success && state.data) {
         onIngredientsImported(state.data);
+        setIsOpen(false);
     } else if (state.error) {
         toast({
             variant: "destructive",
@@ -54,10 +58,10 @@ const ImportSheetDialog = ({ onIngredientsImported }: ImportSheetDialogProps) =>
             description: state.error,
         });
     }
-  }, [state, onIngredientsImported, toast]);
+  }, [state, isPending, onIngredientsImported, toast]);
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileDown className="mr-2" />
