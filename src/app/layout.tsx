@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'SweetPrice',
+  title: 'Precifica Céu',
   description: 'An intuitive online application for pricing confectionery products.',
 };
 
