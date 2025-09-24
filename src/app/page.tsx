@@ -10,11 +10,14 @@ import IngredientForm from "@/components/app/ingredient-form";
 import IngredientsList from "@/components/app/ingredients-list";
 import RecipeBuilder from "@/components/app/recipe-builder";
 import CostAnalysis from "@/components/app/cost-analysis";
+import ImportSheetDialog from "@/components/app/import-sheet-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL_INGREDIENTS);
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
+  const { toast } = useToast();
 
   const addOrUpdateIngredient = (ingredient: Ingredient) => {
     setIngredients((prev) => {
@@ -40,13 +43,22 @@ export default function Home() {
     setEditingIngredient(undefined);
   };
 
+  const handleIngredientsImported = (importedIngredients: Ingredient[]) => {
+    setIngredients(prev => [...prev, ...importedIngredients]);
+    toast({
+      title: "Sucesso!",
+      description: `${importedIngredients.length} ingredientes foram importados com sucesso.`,
+    })
+  };
+
   return (
     <div className="min-h-screen w-full">
       <AppHeader />
       <main className="container mx-auto p-4 md:p-8 space-y-8">
         <Card className="shadow-lg">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-headline text-2xl">Gerenciar Ingredientes</CardTitle>
+            <ImportSheetDialog onIngredientsImported={handleIngredientsImported}/>
           </CardHeader>
           <CardContent className="space-y-6">
             <IngredientForm

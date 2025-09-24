@@ -1,0 +1,100 @@
+"use client";
+
+import { useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
+import { FileDown, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { importFromSheet } from '@/app/actions';
+import type { Ingredient } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+
+interface ImportSheetDialogProps {
+    onIngredientsImported: (ingredients: Ingredient[]) => void;
+}
+
+const initialState = {
+  success: false,
+  data: undefined,
+  error: undefined,
+};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      Importar
+    </Button>
+  );
+}
+
+const ImportSheetDialog = ({ onIngredientsImported }: ImportSheetDialogProps) => {
+  const [state, formAction] = useFormState(importFromSheet, initialState);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (state.success && state.data) {
+        onIngredientsImported(state.data);
+    } else if (state.error) {
+        toast({
+            variant: "destructive",
+            title: "Erro na Importação",
+            description: state.error,
+        });
+    }
+  }, [state, onIngredientsImported, toast]);
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <FileDown className="mr-2" />
+          Importar do Google Sheets
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[525px]">
+        <DialogHeader>
+          <DialogTitle>Importar Ingredientes do Google Sheets</DialogTitle>
+          <DialogDescription>
+            Cole o link compartilhável da sua planilha. A primeira linha deve conter os cabeçalhos:
+            Nome, Tamanho da Embalagem, Custo, Unidade (g, kg, ml, l, un), Fornecedor (opcional).
+          </DialogDescription>
+        </DialogHeader>
+        <form action={formAction} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="sheetUrl">URL da Planilha</Label>
+            <Input 
+              id="sheetUrl" 
+              name="sheetUrl" 
+              placeholder="https://docs.google.com/spreadsheets/d/..." 
+              required
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+                <Button type="button" variant="secondary">
+                    Cancelar
+                </Button>
+            </DialogClose>
+            <SubmitButton />
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ImportSheetDialog;
