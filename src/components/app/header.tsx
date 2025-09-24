@@ -1,4 +1,4 @@
-import { Cake, BookHeart } from 'lucide-react';
+import { Cake, BookHeart, Settings } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -35,6 +35,9 @@ const AppHeader = () => {
             </Link>
             <Link href="/recipes" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
                 Livro de Receitas
+            </Link>
+            <Link href="/costs" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+                Custos
             </Link>
         </nav>
       </div>
