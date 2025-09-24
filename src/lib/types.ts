@@ -1,4 +1,5 @@
 export type Unit = 'g' | 'kg' | 'ml' | 'l' | 'un';
+export type OperationalUnit = 'min' | 'h' | 'un';
 
 export interface Ingredient {
   id: string;
@@ -12,16 +13,26 @@ export interface Ingredient {
   lossFactor?: number;
 }
 
-export interface RecipeIngredient {
+export type RecipeItemType = 'ingredient' | 'labor' | 'equipment';
+
+export interface RecipeItem {
   id: string;
-  ingredient: Ingredient;
+  type: RecipeItemType;
+  name: string;
   quantity: number;
+  unit: Unit | OperationalUnit;
+  cost: number;
+  // If type is 'ingredient', this will be the ingredient object
+  ingredient?: Ingredient;
+  // If type is 'equipment', this can hold the equipment key
+  equipmentKey?: string;
 }
+
 
 export interface Recipe {
     id: string;
-    name: string;
-    ingredients: RecipeIngredient[];
+    name:string;
+    items: RecipeItem[];
     totalCost?: number;
     suggestedPrice?: number;
 }

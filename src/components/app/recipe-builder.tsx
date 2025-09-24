@@ -1,88 +1,159 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Ingredient, Recipe, RecipeIngredient } from '@/lib/types';
+import type { Ingredient, Recipe, RecipeItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookMarked, Plus, Trash2, HelpCircle, Save } from 'lucide-react';
+import { BookMarked, Plus, Trash2, Save, CookingPot, Clock, Zap } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import SubstitutionFinder from './substitution-finder';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useCosts } from '@/hooks/use-costs';
 
 interface RecipeBuilderProps {
   ingredients: Ingredient[];
-  recipeIngredients: RecipeIngredient[];
-  setRecipeIngredients: React.Dispatch<React.SetStateAction<RecipeIngredient[]>>;
+  recipeItems: RecipeItem[];
+  setRecipeItems: React.Dispatch<React.SetStateAction<RecipeItem[]>>;
   onSaveRecipe: (recipe: Recipe) => void;
 }
 
-const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients, onSaveRecipe }: RecipeBuilderProps) => {
-  const [selectedIngredientId, setSelectedIngredientId] = useState<string | undefined>();
-  const [quantity, setQuantity] = useState<number>(0);
+const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe }: RecipeBuilderProps) => {
+  const { costs, electricEquipments, gasEquipments } = useCosts();
 
+  // Ingredient state
+  const [selectedIngredientId, setSelectedIngredientId] = useState<string | undefined>();
+  const [ingredientQuantity, setIngredientQuantity] = useState<number>(0);
+
+  // Labor state
+  const [laborTime, setLaborTime] = useState<number>(0);
+  
+  // Equipment state
+  const [selectedEquipmentKey, setSelectedEquipmentKey] = useState<string | undefined>();
+  const [equipmentTime, setEquipmentTime] = useState<number>(0);
+
+  // General state
   const [margin, setMargin] = useState<number>(100);
   const [marginType, setMarginType] = useState<'percentage' | 'fixed'>('percentage');
-
   const [recipeName, setRecipeName] = useState('');
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
-  const addIngredientToRecipe = () => {
-    if (!selectedIngredientId || quantity <= 0) return;
-    
-    const ingredient = ingredients.find((i) => i.id === selectedIngredientId);
-    if (!ingredient) return;
+  // Computed values
+  const selectedIngredient = useMemo(() => ingredients.find((i) => i.id === selectedIngredientId), [selectedIngredientId, ingredients]);
+  const selectedEquipment = useMemo(() => {
+    if (!selectedEquipmentKey) return null;
+    const allEquipments = { ...electricEquipments, ...gasEquipments };
+    const equip = allEquipments[selectedEquipmentKey as keyof typeof allEquipments];
+    return equip ? { key: selectedEquipmentKey, ...equip } : null;
+  }, [selectedEquipmentKey, electricEquipments, gasEquipments]);
 
-    const newRecipeIngredient: RecipeIngredient = {
-      id: new Date().toISOString(),
-      ingredient,
-      quantity,
-    };
 
-    setRecipeIngredients((prev) => [...prev, newRecipeIngredient]);
-    setSelectedIngredientId(undefined);
-    setQuantity(0);
+  const addRecipeItem = (type: 'ingredient' | 'labor' | 'equipment') => {
+    let newItem: RecipeItem | null = null;
+
+    if (type === 'ingredient' && selectedIngredient && ingredientQuantity > 0) {
+      const cost = (selectedIngredient.unitCost || 0) * ingredientQuantity;
+      newItem = {
+        id: new Date().toISOString(),
+        type: 'ingredient',
+        name: selectedIngredient.name,
+        quantity: ingredientQuantity,
+        unit: selectedIngredient.unit,
+        cost: cost,
+        ingredient: selectedIngredient,
+      };
+      setSelectedIngredientId(undefined);
+      setIngredientQuantity(0);
+    } 
+    else if (type === 'labor' && laborTime > 0) {
+        const proLaborePerHour = (costs.proLabore || 0) / (22 * 8); // Assuming 22 work days, 8 hours/day
+        const costPerMinute = proLaborePerHour / 60;
+        const cost = costPerMinute * laborTime;
+        newItem = {
+            id: new Date().toISOString(),
+            type: 'labor',
+            name: 'Mão de Obra',
+            quantity: laborTime,
+            unit: 'min',
+            cost,
+        }
+        setLaborTime(0);
+    }
+    else if (type === 'equipment' && selectedEquipment && equipmentTime > 0) {
+      let cost = 0;
+      const timeInHours = equipmentTime / 60;
+      
+      if (selectedEquipment.unit === 'Watts' && costs.kwhPrice) { // Electric
+        const powerInKw = selectedEquipment.value / 1000;
+        cost = powerInKw * timeInHours * costs.kwhPrice;
+      } else if (selectedEquipment.unit === 'kg/h' && costs.gasCylinderPrice && costs.gasCylinderSize) { // Gas
+        const gasPricePerKg = costs.gasCylinderPrice / parseFloat(costs.gasCylinderSize);
+        const gasConsumedKg = selectedEquipment.value * timeInHours;
+        cost = gasConsumedKg * gasPricePerKg;
+      }
+
+      newItem = {
+        id: new Date().toISOString(),
+        type: 'equipment',
+        name: selectedEquipment.label,
+        quantity: equipmentTime,
+        unit: 'min',
+        cost,
+        equipmentKey: selectedEquipment.key,
+      }
+      setSelectedEquipmentKey(undefined);
+      setEquipmentTime(0);
+    }
+
+    if (newItem) {
+      setRecipeItems((prev) => [...prev, newItem!]);
+    }
   };
 
-  const removeIngredientFromRecipe = (id: string) => {
-    setRecipeIngredients((prev) => prev.filter((ri) => ri.id !== id));
+
+  const removeRecipeItem = (id: string) => {
+    setRecipeItems((prev) => prev.filter((ri) => ri.id !== id));
   };
   
   const totalCost = useMemo(() => {
-    return recipeIngredients.reduce((acc, ri) => {
-      const costPerUnit = ri.ingredient.unitCost || (ri.ingredient.cost / ri.ingredient.packageSize);
-      return acc + (costPerUnit * ri.quantity);
-    }, 0);
-  }, [recipeIngredients]);
+    return recipeItems.reduce((acc, item) => acc + item.cost, 0);
+  }, [recipeItems]);
 
   const suggestedPrice = useMemo(() => {
     if (totalCost === 0) return 0;
-    if (marginType === 'percentage') {
-      return totalCost * (1 + margin / 100);
-    }
-    return totalCost + margin;
-  }, [totalCost, margin, marginType]);
+    
+    // Add indirect costs and taxes before profit margin
+    const costWithIndirects = totalCost * (1 + (costs.indirectCostsRate || 0) / 100);
+    const costWithTaxes = costWithIndirects / (1 - ((costs.taxRate || 0) + (costs.creditCardFee || 0)) / 100);
 
-  const selectedIngredient = useMemo(() => ingredients.find((i) => i.id === selectedIngredientId), [selectedIngredientId, ingredients]);
+    if (marginType === 'percentage') {
+      return costWithTaxes * (1 + margin / 100);
+    }
+    return costWithTaxes + margin;
+  }, [totalCost, margin, marginType, costs]);
+
 
   const handleSaveRecipe = () => {
-    if (!recipeName.trim() || recipeIngredients.length === 0) return;
+    if (!recipeName.trim() || recipeItems.length === 0) return;
 
     const newRecipe: Recipe = {
       id: new Date().toISOString(),
       name: recipeName,
-      ingredients: recipeIngredients,
+      items: recipeItems,
       totalCost: totalCost,
       suggestedPrice: suggestedPrice,
     };
     onSaveRecipe(newRecipe);
     setRecipeName('');
     setIsSaveDialogOpen(false);
-  }
+  };
+
+  const allEquipments = useMemo(() => ({ ...electricEquipments, ...gasEquipments }), [electricEquipments, gasEquipments]);
 
   return (
     <Card className="shadow-lg h-full">
@@ -94,12 +165,12 @@ const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients, o
               Montar Receita
             </CardTitle>
             <CardDescription>
-              Adicione ingredientes da sua lista para montar uma nova receita e calcular seu custo.
+              Adicione ingredientes, mão de obra e equipamentos para montar a receita e calcular seu custo.
             </CardDescription>
           </div>
           <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" disabled={recipeIngredients.length === 0}>
+              <Button variant="outline" disabled={recipeItems.length === 0}>
                 <Save className="mr-2"/>
                 Salvar Receita
               </Button>
@@ -108,7 +179,7 @@ const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients, o
               <DialogHeader>
                 <DialogTitle>Salvar Receita</DialogTitle>
                 <DialogDescription>Dê um nome para sua receita para salvá-la no seu Livro de Receitas.</DialogDescription>
-              </DialogHeader>
+              </Header>
               <div className="space-y-2">
                 <Label htmlFor="recipeName">Nome da Receita</Label>
                 <Input 
@@ -129,62 +200,119 @@ const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients, o
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-col md:flex-row items-end gap-2">
-          <div className="flex-grow w-full">
-            <Label>Ingrediente</Label>
-            <Select onValueChange={setSelectedIngredientId} value={selectedIngredientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um ingrediente" />
-              </SelectTrigger>
-              <SelectContent>
-                {ingredients.map((ing) => (
-                  <SelectItem key={ing.id} value={ing.id}>
-                    {ing.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-full md:w-auto">
-            <Label>Quantidade ({selectedIngredient?.unit})</Label>
-            <Input
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              placeholder="Ex: 250"
-              className="w-full"
-            />
-          </div>
-          <Button onClick={addIngredientToRecipe} disabled={!selectedIngredientId || quantity <= 0}>
-            <Plus className="mr-2 h-4 w-4" /> Adicionar
-          </Button>
-        </div>
+        <Tabs defaultValue="ingredients">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="ingredients"><CookingPot className="mr-2"/>Ingredientes</TabsTrigger>
+            <TabsTrigger value="labor"><Clock className="mr-2"/>Mão de Obra</TabsTrigger>
+            <TabsTrigger value="equipment"><Zap className="mr-2"/>Equipamentos</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="ingredients" className="pt-4">
+            <div className="flex flex-col md:flex-row items-end gap-2">
+              <div className="flex-grow w-full">
+                <Label>Ingrediente</Label>
+                <Select onValueChange={setSelectedIngredientId} value={selectedIngredientId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um ingrediente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ingredients.map((ing) => (
+                      <SelectItem key={ing.id} value={ing.id}>
+                        {ing.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-full md:w-auto">
+                <Label>Quantidade ({selectedIngredient?.unit})</Label>
+                <Input
+                  type="number"
+                  value={ingredientQuantity}
+                  onChange={(e) => setIngredientQuantity(Number(e.target.value))}
+                  placeholder="Ex: 250"
+                  className="w-full"
+                />
+              </div>
+              <Button onClick={() => addRecipeItem('ingredient')} disabled={!selectedIngredientId || ingredientQuantity <= 0} className="w-full md:w-auto">
+                <Plus className="mr-2 h-4 w-4" /> Adicionar
+              </Button>
+            </div>
+          </TabsContent>
 
-        {recipeIngredients.length > 0 ? (
+          <TabsContent value="labor" className="pt-4">
+              <div className="flex flex-col md:flex-row items-end gap-2">
+                 <div className="flex-grow w-full">
+                    <Label>Tempo Gasto (minutos)</Label>
+                    <Input
+                    type="number"
+                    value={laborTime}
+                    onChange={(e) => setLaborTime(Number(e.target.value))}
+                    placeholder="Ex: 60"
+                    />
+                 </div>
+                 <Button onClick={() => addRecipeItem('labor')} disabled={laborTime <= 0} className="w-full md:w-auto">
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Mão de Obra
+                 </Button>
+              </div>
+          </TabsContent>
+
+          <TabsContent value="equipment" className="pt-4">
+              <div className="flex flex-col md:flex-row items-end gap-2">
+                <div className="flex-grow w-full">
+                    <Label>Equipamento</Label>
+                    <Select onValueChange={setSelectedEquipmentKey} value={selectedEquipmentKey}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Selecione um equipamento" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {Object.entries(allEquipments).map(([key, equip]) => (
+                            equip.value && <SelectItem key={key} value={key}>{equip.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
+                <div className="w-full md:w-auto">
+                    <Label>Tempo de Uso (minutos)</Label>
+                    <Input
+                        type="number"
+                        value={equipmentTime}
+                        onChange={(e) => setEquipmentTime(Number(e.target.value))}
+                        placeholder="Ex: 15"
+                        className="w-full"
+                    />
+                </div>
+                <Button onClick={() => addRecipeItem('equipment')} disabled={!selectedEquipmentKey || equipmentTime <= 0} className="w-full md:w-auto">
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Equipamento
+                </Button>
+              </div>
+          </TabsContent>
+        </Tabs>
+
+
+        {recipeItems.length > 0 ? (
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ingrediente</TableHead>
+                  <TableHead>Item</TableHead>
                   <TableHead>Quantidade</TableHead>
                   <TableHead className="text-right">Custo</TableHead>
                   <TableHead className="text-center w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recipeIngredients.map((ri) => (
-                  <TableRow key={ri.id}>
-                    <TableCell className="font-medium">{ri.ingredient.name}</TableCell>
-                    <TableCell>{ri.quantity} {ri.ingredient.unit}</TableCell>
+                {recipeItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{item.quantity} {item.unit}</TableCell>
                     <TableCell className="text-right">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        (ri.ingredient.unitCost || (ri.ingredient.cost / ri.ingredient.packageSize)) * ri.quantity
-                      )}
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.cost)}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center space-x-1">
-                        <SubstitutionFinder ingredient={ri.ingredient} amount={ri.quantity} />
-                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => removeIngredientFromRecipe(ri.id)}>
+                        {item.type === 'ingredient' && item.ingredient && <SubstitutionFinder ingredient={item.ingredient} amount={item.quantity} />}
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => removeRecipeItem(item.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -197,7 +325,7 @@ const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients, o
         ) : (
           <div className="text-center py-8 border-2 border-dashed rounded-lg">
             <p className="text-muted-foreground">Sua receita está vazia.</p>
-            <p className="text-sm text-muted-foreground/80">Adicione ingredientes para começar a montar.</p>
+            <p className="text-sm text-muted-foreground/80">Adicione itens para começar a montar.</p>
           </div>
         )}
       </CardContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Ingredient, Recipe, RecipeIngredient } from "@/lib/types";
+import type { Ingredient, Recipe, RecipeItem } from "@/lib/types";
 import { INITIAL_INGREDIENTS } from "@/lib/constants";
 import { useSearchParams, useRouter } from 'next/navigation'
 
@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL_INGREDIENTS);
-  const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
+  const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const { toast } = useToast();
@@ -46,10 +46,10 @@ export default function Home() {
           const recipes: Recipe[] = JSON.parse(storedRecipes);
           const recipeToLoad = recipes.find(r => r.id === recipeToLoadId);
           if (recipeToLoad) {
-            setRecipeIngredients(recipeToLoad.ingredients);
+            setRecipeItems(recipeToLoad.items);
             toast({
               title: `Receita "${recipeToLoad.name}" carregada!`,
-              description: 'Os ingredientes foram adicionados à montagem.',
+              description: 'Os itens foram adicionados à montagem.',
             });
             // Clean up URL
             router.replace('/', { scroll: false });
@@ -76,7 +76,7 @@ export default function Home() {
 
   const deleteIngredient = (id: string) => {
     setIngredients((prev) => prev.filter((i) => i.id !== id));
-    setRecipeIngredients((prev) => prev.filter((ri) => ri.ingredient.id !== id));
+    setRecipeItems((prev) => prev.filter((ri) => ri.type === 'ingredient' && ri.ingredient?.id !== id));
   };
 
   const startEditing = (ingredient: Ingredient) => {
@@ -132,13 +132,13 @@ export default function Home() {
           <div className="lg:col-span-3">
             <RecipeBuilder
               ingredients={ingredients}
-              recipeIngredients={recipeIngredients}
-              setRecipeIngredients={setRecipeIngredients}
+              recipeItems={recipeItems}
+              setRecipeItems={setRecipeItems}
               onSaveRecipe={handleSaveRecipe}
             />
           </div>
           <div className="lg:col-span-2">
-            <CostAnalysis recipeIngredients={recipeIngredients} />
+            <CostAnalysis recipeItems={recipeItems} />
           </div>
         </div>
       </main>

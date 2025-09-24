@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 
 export default function RecipesPage() {
@@ -52,6 +53,15 @@ export default function RecipesPage() {
             description: 'A receita foi removida do seu livro.',
         })
     };
+
+    const getItemTypeLabel = (type: string) => {
+        switch (type) {
+            case 'ingredient': return 'Ingrediente';
+            case 'labor': return 'Mão de Obra';
+            case 'equipment': return 'Equipamento';
+            default: return 'Item';
+        }
+    }
 
     return (
         <div className="min-h-screen w-full">
@@ -108,20 +118,20 @@ export default function RecipesPage() {
                                              <Table>
                                                 <TableHeader>
                                                     <TableRow>
-                                                        <TableHead>Ingrediente</TableHead>
+                                                        <TableHead>Item</TableHead>
+                                                        <TableHead>Tipo</TableHead>
                                                         <TableHead>Quantidade</TableHead>
                                                         <TableHead className="text-right">Custo</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {recipe.ingredients.map(ri => (
-                                                        <TableRow key={ri.id}>
-                                                            <TableCell>{ri.ingredient.name}</TableCell>
-                                                            <TableCell>{ri.quantity} {ri.ingredient.unit}</TableCell>
+                                                    {recipe.items.map(item => (
+                                                        <TableRow key={item.id}>
+                                                            <TableCell>{item.name}</TableCell>
+                                                            <TableCell><Badge variant="secondary">{getItemTypeLabel(item.type)}</Badge></TableCell>
+                                                            <TableCell>{item.quantity} {item.unit}</TableCell>
                                                             <TableCell className="text-right">
-                                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                                                                    (ri.ingredient.unitCost || (ri.ingredient.cost / ri.ingredient.packageSize)) * ri.quantity
-                                                                )}
+                                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.cost)}
                                                             </TableCell>
                                                         </TableRow>
                                                     ))}

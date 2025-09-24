@@ -3,14 +3,14 @@
 import { useMemo } from 'react';
 import { TrendingUp, PieChart as PieChartIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import type { RecipeIngredient } from '@/lib/types';
+import type { RecipeItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CostAnalysisProps {
-  recipeIngredients: RecipeIngredient[];
+  recipeItems: RecipeItem[];
 }
 
-const COLORS = ['#F4B4C5', '#F9E79F', '#B4E4F3', '#D3B4F3', '#B4F3D3'];
+const COLORS = ['#F4B4C5', '#F9E79F', '#B4E4F3', '#D3B4F3', '#B4F3D3', '#fbc6a4', '#b5eAD7', '#ffdac1'];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -27,25 +27,35 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const CostAnalysis = ({ recipeIngredients }: CostAnalysisProps) => {
+const CostAnalysis = ({ recipeItems }: CostAnalysisProps) => {
   const totalCost = useMemo(() => {
-    return recipeIngredients.reduce((acc, ri) => {
-      const costPerUnit = ri.ingredient.cost / ri.ingredient.packageSize;
-      return acc + (costPerUnit * ri.quantity);
-    }, 0);
-  }, [recipeIngredients]);
+    return recipeItems.reduce((acc, item) => acc + item.cost, 0);
+  }, [recipeItems]);
 
   const chartData = useMemo(() => {
     if (totalCost === 0) return [];
-    return recipeIngredients.map(ri => {
-      const cost = (ri.ingredient.cost / ri.ingredient.packageSize) * ri.quantity;
-      return {
-        name: ri.ingredient.name,
-        value: cost,
-        percent: ((cost / totalCost) * 100).toFixed(1),
-      };
-    });
-  }, [recipeIngredients, totalCost]);
+    
+    // Group costs by type (Ingredients, Labor, Equipment)
+    const groupedCosts = recipeItems.reduce((acc, item) => {
+        let key = '';
+        if (item.type === 'ingredient') key = 'Ingredientes';
+        else if (item.type === 'labor') key = 'Mão de Obra';
+        else if (item.type === 'equipment') key = 'Equipamentos';
+        
+        if (key) {
+            if (!acc[key]) acc[key] = 0;
+            acc[key] += item.cost;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+
+
+    return Object.entries(groupedCosts).map(([name, value]) => ({
+      name,
+      value,
+      percent: ((value / totalCost) * 100).toFixed(1),
+    }));
+  }, [recipeItems, totalCost]);
 
   return (
     <Card className="shadow-lg h-full">
@@ -55,7 +65,7 @@ const CostAnalysis = ({ recipeIngredients }: CostAnalysisProps) => {
           Análise de Custo
         </CardTitle>
         <CardDescription>
-          Visualize a proporção de custo de cada ingrediente na sua receita.
+          Visualize a proporção de custo de cada componente na sua receita.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -89,7 +99,7 @@ const CostAnalysis = ({ recipeIngredients }: CostAnalysisProps) => {
             <TrendingUp className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="font-semibold">Nenhum dado para analisar</h3>
             <p className="text-sm text-muted-foreground">
-              Adicione ingredientes à sua receita para ver a análise de custos aqui.
+              Adicione itens à sua receita para ver a análise de custos aqui.
             </p>
           </div>
         )}
