@@ -7,6 +7,9 @@ export interface Ingredient {
   packageSize: number;
   unit: Unit;
   supplier?: string;
+  category?: string;
+  unitCost?: number;
+  lossFactor?: number;
 }
 
 export interface RecipeIngredient {

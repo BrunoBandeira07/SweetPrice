@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Badge } from '../ui/badge';
 
 
 interface IngredientsListProps {
@@ -44,8 +45,9 @@ const IngredientsList = ({ ingredients, onEdit, onDelete }: IngredientsListProps
         <TableHeader>
           <TableRow>
             <TableHead>Ingrediente</TableHead>
-            <TableHead className="text-right">Custo por Unidade</TableHead>
-            <TableHead>Fornecedor</TableHead>
+            <TableHead>Categoria</TableHead>
+            <TableHead className="text-right">Custo Un.</TableHead>
+            <TableHead className="text-right">Fator Perda</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -53,10 +55,13 @@ const IngredientsList = ({ ingredients, onEdit, onDelete }: IngredientsListProps
           {ingredients.map((ingredient) => (
             <TableRow key={ingredient.id}>
               <TableCell className="font-medium">{ingredient.name}</TableCell>
-              <TableCell className="text-right">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(ingredient.cost / ingredient.packageSize)} / {getUnitLabel(ingredient.unit).replace(/s$/, '')}
+              <TableCell>
+                {ingredient.category ? <Badge variant="secondary">{ingredient.category}</Badge> : <span className="text-muted-foreground">N/A</span>}
               </TableCell>
-              <TableCell className="text-muted-foreground">{ingredient.supplier || 'N/A'}</TableCell>
+              <TableCell className="text-right">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(ingredient.unitCost || 0)}
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground">{ingredient.lossFactor?.toFixed(2) || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end space-x-2">
                   <Button variant="ghost" size="icon" onClick={() => onEdit(ingredient)}>

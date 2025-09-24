@@ -100,13 +100,19 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
 
         const columnIndices = {
           item: headerRow.indexOf('item'),
+          category: headerRow.indexOf('categoria'),
           volumeBruto: headerRow.indexOf('volume bruto'),
           unMed: headerRow.indexOf('un.med'),
           custoMedio: headerRow.indexOf('custo medio'),
+          custoUn: headerRow.indexOf('custo un.'),
+          fatorDePerda: headerRow.indexOf('fator de perda'),
         };
+        
+        const requiredColumns = ['item', 'volumeBruto', 'unMed', 'custoMedio'];
+        const missingColumns = requiredColumns.filter(col => columnIndices[col as keyof typeof columnIndices] === -1);
 
-        if (Object.values(columnIndices).some(index => index === -1)) {
-            return { success: false, error: "Formato de planilha inválido. Verifique os cabeçalhos das colunas (Item, Volume Bruto, Un.Med, Custo Médio)." };
+        if (missingColumns.length > 0) {
+             return { success: false, error: `Formato de planilha inválido. Faltando colunas obrigatórias: ${missingColumns.join(', ')}.` };
         }
         
         const ingredients: Ingredient[] = dataRows
@@ -118,6 +124,13 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
                 const packageSize = parseFloat(columns[columnIndices.volumeBruto]?.trim().replace(',', '.'));
                 const cost = parseFloat(columns[columnIndices.custoMedio]?.trim().replace(',', '.'));
                 const unit = columns[columnIndices.unMed]?.trim().toLowerCase();
+                
+                const category = columnIndices.category !== -1 ? columns[columnIndices.category]?.trim() : undefined;
+                const unitCostStr = columnIndices.custoUn !== -1 ? columns[columnIndices.custoUn]?.trim().replace(',', '.') : undefined;
+                const unitCost = unitCostStr ? parseFloat(unitCostStr) : undefined;
+                const lossFactorStr = columnIndices.fatorDePerda !== -1 ? columns[columnIndices.fatorDePerda]?.trim().replace(',', '.') : undefined;
+                const lossFactor = lossFactorStr ? parseFloat(lossFactorStr) : undefined;
+
 
                 if (!name || isNaN(packageSize) || isNaN(cost) || !unit) {
                     return null;
@@ -130,11 +143,14 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
 
                 return {
                     id: new Date().toISOString() + Math.random(),
-                    name: name,
-                    packageSize: packageSize,
-                    cost: cost,
-                    unit: unit,
-                    supplier: undefined, // Fornecedor não está no novo formato
+                    name,
+                    packageSize,
+                    cost,
+                    unit,
+                    category,
+                    unitCost: isNaN(unitCost!) ? undefined : unitCost,
+                    lossFactor: isNaN(lossFactor!) ? undefined : lossFactor,
+                    supplier: undefined,
                 };
             })
             .filter((ing): ing is Ingredient => ing !== null);
