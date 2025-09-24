@@ -69,8 +69,12 @@ const ImportSheetDialog = ({ onIngredientsImported }: ImportSheetDialogProps) =>
         <DialogHeader>
           <DialogTitle>Importar Ingredientes do Google Sheets</DialogTitle>
           <DialogDescription>
-            Cole o link compartilhável da sua planilha. A primeira linha deve conter os cabeçalhos:
-            Nome, Tamanho da Embalagem, Custo, Unidade (g, kg, ml, l, un), Fornecedor (opcional).
+            Cole o link da sua planilha. As colunas necessárias são: 
+            <code className="font-mono text-sm bg-muted p-1 rounded-sm">Item</code>,
+            <code className="font-mono text-sm bg-muted p-1 rounded-sm">Volume Bruto</code>,
+            <code className="font-mono text-sm bg-muted p-1 rounded-sm">Un.Med</code>, e
+            <code className="font-mono text-sm bg-muted p-1 rounded-sm">Custo Médio</code>.
+             A verificação não diferencia maiúsculas/minúsculas ou acentos.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="space-y-4">

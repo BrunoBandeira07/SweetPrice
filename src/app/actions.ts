@@ -64,6 +64,14 @@ function isValidUnit(unit: string): unit is Unit {
     return ['g', 'kg', 'ml', 'l', 'un'].includes(unit);
 }
 
+function normalizeHeader(header: string): string {
+  return header
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
 export async function importFromSheet(prevState: any, formData: FormData): Promise<ImportResult> {
     const sheetUrl = formData.get('sheetUrl') as string;
 
@@ -86,28 +94,50 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
         }
 
         const csvText = await response.text();
-        const rows = csvText.split(/\r?\n/).slice(1); // Ignora a linha do cabeçalho
-        const ingredients: Ingredient[] = rows
+        const rows = csvText.split(/\r?\n/);
+        const headerRow = rows[0].split(',').map(normalizeHeader);
+        const dataRows = rows.slice(1);
+
+        const columnIndices = {
+          item: headerRow.indexOf('item'),
+          volumeBruto: headerRow.indexOf('volume bruto'),
+          unMed: headerRow.indexOf('un.med'),
+          custoMedio: headerRow.indexOf('custo medio'),
+        };
+
+        if (Object.values(columnIndices).some(index => index === -1)) {
+            return { success: false, error: "Formato de planilha inválido. Verifique os cabeçalhos das colunas (Item, Volume Bruto, Un.Med, Custo Médio)." };
+        }
+        
+        const ingredients: Ingredient[] = dataRows
             .map((row) => {
                 const columns = row.split(',');
-                if (columns.length < 4 || !columns[0]) return null; // Precisa pelo menos dos 4 primeiros campos
+                if (columns.length < 4 || !columns[columnIndices.item]) return null;
 
-                const unit = columns[3]?.trim().toLowerCase();
+                const name = columns[columnIndices.item]?.trim();
+                const packageSize = parseFloat(columns[columnIndices.volumeBruto]?.trim().replace(',', '.'));
+                const cost = parseFloat(columns[columnIndices.custoMedio]?.trim().replace(',', '.'));
+                const unit = columns[columnIndices.unMed]?.trim().toLowerCase();
+
+                if (!name || isNaN(packageSize) || isNaN(cost) || !unit) {
+                    return null;
+                }
+
                 if (!isValidUnit(unit)) {
-                    console.warn(`Unidade inválida '${unit}' para o ingrediente '${columns[0]}'. Pulando linha.`);
+                    console.warn(`Unidade inválida '${unit}' para o ingrediente '${name}'. Pulando linha.`);
                     return null;
                 }
 
                 return {
                     id: new Date().toISOString() + Math.random(),
-                    name: columns[0]?.trim(),
-                    packageSize: parseFloat(columns[1]?.trim()),
-                    cost: parseFloat(columns[2]?.trim()),
+                    name: name,
+                    packageSize: packageSize,
+                    cost: cost,
                     unit: unit,
-                    supplier: columns[4]?.trim() || undefined,
+                    supplier: undefined, // Fornecedor não está no novo formato
                 };
             })
-            .filter((ing): ing is Ingredient => ing !== null && !isNaN(ing.packageSize) && !isNaN(ing.cost));
+            .filter((ing): ing is Ingredient => ing !== null);
 
         return { success: true, data: ingredients };
     } catch (error) {
