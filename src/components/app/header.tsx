@@ -1,5 +1,6 @@
-import { Cake } from 'lucide-react';
+import { Cake, BookHeart } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const AppHeader = () => {
@@ -24,9 +25,18 @@ const AppHeader = () => {
             Precifica Céu
           </h1>
         </div>
-        <p className="mt-2 text-lg text-primary-foreground/80">
+        <p className="mt-2 text-lg text-primary-foreground/80 font-script">
           Precificação fácil para suas doces criações
         </p>
+
+        <nav className="mt-6 flex justify-center gap-4">
+            <Link href="/" className="text-primary-foreground/90 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-primary">
+                Calculadora
+            </Link>
+            <Link href="/recipes" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+                Livro de Receitas
+            </Link>
+        </nav>
       </div>
     </header>
   );

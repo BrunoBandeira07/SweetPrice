@@ -1,30 +1,35 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import type { Ingredient, RecipeIngredient } from '@/lib/types';
+import type { Ingredient, Recipe, RecipeIngredient } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookMarked, Plus, Trash2, HelpCircle } from 'lucide-react';
+import { BookMarked, Plus, Trash2, HelpCircle, Save } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import SubstitutionFinder from './substitution-finder';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 
 interface RecipeBuilderProps {
   ingredients: Ingredient[];
   recipeIngredients: RecipeIngredient[];
   setRecipeIngredients: React.Dispatch<React.SetStateAction<RecipeIngredient[]>>;
+  onSaveRecipe: (recipe: Recipe) => void;
 }
 
-const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients }: RecipeBuilderProps) => {
+const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients, onSaveRecipe }: RecipeBuilderProps) => {
   const [selectedIngredientId, setSelectedIngredientId] = useState<string | undefined>();
   const [quantity, setQuantity] = useState<number>(0);
 
   const [margin, setMargin] = useState<number>(100);
   const [marginType, setMarginType] = useState<'percentage' | 'fixed'>('percentage');
+
+  const [recipeName, setRecipeName] = useState('');
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
   const addIngredientToRecipe = () => {
     if (!selectedIngredientId || quantity <= 0) return;
@@ -49,7 +54,7 @@ const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients }:
   
   const totalCost = useMemo(() => {
     return recipeIngredients.reduce((acc, ri) => {
-      const costPerUnit = ri.ingredient.cost / ri.ingredient.packageSize;
+      const costPerUnit = ri.ingredient.unitCost || (ri.ingredient.cost / ri.ingredient.packageSize);
       return acc + (costPerUnit * ri.quantity);
     }, 0);
   }, [recipeIngredients]);
@@ -64,17 +69,64 @@ const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients }:
 
   const selectedIngredient = useMemo(() => ingredients.find((i) => i.id === selectedIngredientId), [selectedIngredientId, ingredients]);
 
+  const handleSaveRecipe = () => {
+    if (!recipeName.trim() || recipeIngredients.length === 0) return;
+
+    const newRecipe: Recipe = {
+      id: new Date().toISOString(),
+      name: recipeName,
+      ingredients: recipeIngredients,
+      totalCost: totalCost,
+      suggestedPrice: suggestedPrice,
+    };
+    onSaveRecipe(newRecipe);
+    setRecipeName('');
+    setIsSaveDialogOpen(false);
+  }
 
   return (
     <Card className="shadow-lg h-full">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl flex items-center gap-2">
-          <BookMarked className="text-primary"/>
-          Montar Receita
-        </CardTitle>
-        <CardDescription>
-          Adicione ingredientes da sua lista para montar uma nova receita e calcular seu custo.
-        </CardDescription>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="font-headline text-2xl flex items-center gap-2">
+              <BookMarked className="text-primary"/>
+              Montar Receita
+            </CardTitle>
+            <CardDescription>
+              Adicione ingredientes da sua lista para montar uma nova receita e calcular seu custo.
+            </CardDescription>
+          </div>
+          <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={recipeIngredients.length === 0}>
+                <Save className="mr-2"/>
+                Salvar Receita
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Salvar Receita</DialogTitle>
+                <DialogDescription>Dê um nome para sua receita para salvá-la no seu Livro de Receitas.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                <Label htmlFor="recipeName">Nome da Receita</Label>
+                <Input 
+                  id="recipeName"
+                  value={recipeName}
+                  onChange={(e) => setRecipeName(e.target.value)}
+                  placeholder="Ex: Bolo de Chocolate"
+                />
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancelar</Button>
+                </DialogClose>
+                <Button onClick={handleSaveRecipe} disabled={!recipeName.trim()}>Salvar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex flex-col md:flex-row items-end gap-2">
@@ -126,7 +178,7 @@ const RecipeBuilder = ({ ingredients, recipeIngredients, setRecipeIngredients }:
                     <TableCell>{ri.quantity} {ri.ingredient.unit}</TableCell>
                     <TableCell className="text-right">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                        (ri.ingredient.cost / ri.ingredient.packageSize) * ri.quantity
+                        (ri.ingredient.unitCost || (ri.ingredient.cost / ri.ingredient.packageSize)) * ri.quantity
                       )}
                     </TableCell>
                     <TableCell className="text-center">

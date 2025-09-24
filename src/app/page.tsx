@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import type { Ingredient, RecipeIngredient } from "@/lib/types";
+import { useState, useEffect } from "react";
+import type { Ingredient, Recipe, RecipeIngredient } from "@/lib/types";
 import { INITIAL_INGREDIENTS } from "@/lib/constants";
+import { useSearchParams, useRouter } from 'next/navigation'
+
 
 import AppHeader from "@/components/app/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +19,49 @@ export default function Home() {
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL_INGREDIENTS);
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
+  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const { toast } = useToast();
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+
+  useEffect(() => {
+    try {
+      const storedRecipes = localStorage.getItem('savedRecipes');
+      if (storedRecipes) {
+        setSavedRecipes(JSON.parse(storedRecipes));
+      }
+    } catch (error) {
+      console.error("Failed to load recipes from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const recipeToLoadId = searchParams.get('loadRecipe');
+    if (recipeToLoadId) {
+      try {
+        const storedRecipes = localStorage.getItem('savedRecipes');
+        if (storedRecipes) {
+          const recipes: Recipe[] = JSON.parse(storedRecipes);
+          const recipeToLoad = recipes.find(r => r.id === recipeToLoadId);
+          if (recipeToLoad) {
+            setRecipeIngredients(recipeToLoad.ingredients);
+            toast({
+              title: `Receita "${recipeToLoad.name}" carregada!`,
+              description: 'Os ingredientes foram adicionados à montagem.',
+            });
+            // Clean up URL
+            router.replace('/', { scroll: false });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load recipe from URL", error);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, toast]);
+
 
   const addOrUpdateIngredient = (ingredient: Ingredient) => {
     setIngredients((prev) => {
@@ -51,6 +95,16 @@ export default function Home() {
     })
   };
 
+  const handleSaveRecipe = (recipe: Recipe) => {
+    const updatedRecipes = [...savedRecipes, recipe];
+    setSavedRecipes(updatedRecipes);
+    localStorage.setItem('savedRecipes', JSON.stringify(updatedRecipes));
+    toast({
+      title: 'Receita Salva!',
+      description: `A receita "${recipe.name}" foi adicionada ao seu Livro de Receitas.`,
+    });
+  }
+
   return (
     <div className="min-h-screen w-full">
       <AppHeader />
@@ -80,6 +134,7 @@ export default function Home() {
               ingredients={ingredients}
               recipeIngredients={recipeIngredients}
               setRecipeIngredients={setRecipeIngredients}
+              onSaveRecipe={handleSaveRecipe}
             />
           </div>
           <div className="lg:col-span-2">

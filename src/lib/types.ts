@@ -17,3 +17,11 @@ export interface RecipeIngredient {
   ingredient: Ingredient;
   quantity: number;
 }
+
+export interface Recipe {
+    id: string;
+    name: string;
+    ingredients: RecipeIngredient[];
+    totalCost?: number;
+    suggestedPrice?: number;
+}
