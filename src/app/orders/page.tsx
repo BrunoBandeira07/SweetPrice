@@ -12,18 +12,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 import type { Order, ProductionStatus } from '@/lib/types';
 import { INITIAL_ORDERS, PRODUCTION_STATUS_MAP } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { CircleDotDashed, ShoppingCart, CheckCircle2 } from 'lucide-react';
+import { CircleDotDashed, ShoppingCart, CheckCircle2, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 
 const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (orderId: string, status: ProductionStatus) => void; }) => {
+    const [isOpen, setIsOpen] = useState(true);
     const deliveryDate = new Date(order.deliveryDate);
     const isOverdue = isPast(deliveryDate) && order.deliveryStatus === 'pending';
 
     return (
+      <Collapsible asChild open={isOpen} onOpenChange={setIsOpen}>
         <Card className="shadow-md">
             <CardHeader>
                 <div className="flex justify-between items-start">
@@ -34,41 +38,52 @@ const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (o
                             {isOverdue && " (ATRASADA)"}
                         </CardDescription>
                     </div>
-                     <Badge variant={order.deliveryStatus === 'pending' ? 'secondary' : 'default'}>{order.deliveryStatus}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={order.deliveryStatus === 'pending' ? 'secondary' : 'default'}>{order.deliveryStatus}</Badge>
+                       <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                                <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}/>
+                                <span className="sr-only">{isOpen ? 'Contrair' : 'Expandir'}</span>
+                            </Button>
+                        </CollapsibleTrigger>
+                    </div>
                 </div>
             </CardHeader>
-            <CardContent>
-                <Accordion type="single" collapsible>
-                    <AccordionItem value="items">
-                        <AccordionTrigger>Ver Itens ({order.items.length})</AccordionTrigger>
-                        <AccordionContent>
-                             <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                                {order.items.map(item => (
-                                    <li key={item.recipe.id}>{item.quantity}x {item.recipe.name}</li>
+            <CollapsibleContent>
+                <CardContent>
+                    <Accordion type="single" collapsible>
+                        <AccordionItem value="items">
+                            <AccordionTrigger>Ver Itens ({order.items.length})</AccordionTrigger>
+                            <AccordionContent>
+                                <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                                    {order.items.map(item => (
+                                        <li key={item.recipe.id}>{item.quantity}x {item.recipe.name}</li>
+                                    ))}
+                                </ul>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                    <Separator className="my-4"/>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Status da Produção</label>
+                        <Select value={order.productionStatus} onValueChange={(value) => onStatusChange(order.id, value as ProductionStatus)}>
+                            <SelectTrigger className={PRODUCTION_STATUS_MAP[order.productionStatus].color}>
+                                <SelectValue placeholder="Selecione o status"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(PRODUCTION_STATUS_MAP).map(([key, { label }]) => (
+                                    <SelectItem key={key} value={key}>{label}</SelectItem>
                                 ))}
-                            </ul>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-                <Separator className="my-4"/>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Status da Produção</label>
-                    <Select value={order.productionStatus} onValueChange={(value) => onStatusChange(order.id, value as ProductionStatus)}>
-                        <SelectTrigger className={PRODUCTION_STATUS_MAP[order.productionStatus].color}>
-                            <SelectValue placeholder="Selecione o status"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            {Object.entries(PRODUCTION_STATUS_MAP).map(([key, { label }]) => (
-                                <SelectItem key={key} value={key}>{label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </CardContent>
-            <CardFooter className="flex justify-end">
-                <span className="font-bold text-lg">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}</span>
-            </CardFooter>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex justify-end">
+                    <span className="font-bold text-lg">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}</span>
+                </CardFooter>
+            </CollapsibleContent>
         </Card>
+    </Collapsible>
     )
 }
 
