@@ -1,4 +1,4 @@
-import { Cake, BookHeart, Settings } from 'lucide-react';
+import { Cake, BookHeart, Settings, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -31,6 +31,9 @@ const AppHeader = () => {
 
         <nav className="mt-6 flex justify-center gap-4">
             <Link href="/" className="text-primary-foreground/90 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-primary">
+                Dashboard
+            </Link>
+            <Link href="/calculator" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
                 Calculadora
             </Link>
             <Link href="/recipes" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">

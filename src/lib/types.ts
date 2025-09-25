@@ -36,3 +36,17 @@ export interface Recipe {
     totalCost?: number;
     suggestedPrice?: number;
 }
+
+export type OrderStatus = 'pending' | 'delivered' | 'cancelled';
+
+export interface Order {
+  id: string;
+  customerName: string;
+  deliveryDate: string; // ISO string date
+  items: {
+    recipe: Recipe;
+    quantity: number;
+  }[];
+  total: number;
+  status: OrderStatus;
+}

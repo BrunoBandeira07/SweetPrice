@@ -87,7 +87,7 @@ export default function RecipesPage() {
                                                 <CardTitle className="font-headline text-xl">{recipe.name}</CardTitle>
                                                 <div className="flex items-center gap-2">
                                                     <Button asChild variant="outline" size="sm">
-                                                        <Link href={`/?loadRecipe=${recipe.id}`}>
+                                                        <Link href={`/calculator?loadRecipe=${recipe.id}`}>
                                                             <BookUp className="mr-2"/>
                                                             Carregar na Montagem
                                                         </Link>
@@ -153,7 +153,7 @@ export default function RecipesPage() {
                                     Vá para a página de Calculadora, monte uma receita e salve-a para que ela apareça aqui.
                                 </p>
                                 <Button asChild className="mt-6">
-                                    <Link href="/">Ir para Calculadora</Link>
+                                    <Link href="/calculator">Ir para Calculadora</Link>
                                 </Button>
                             </div>
                         )}
