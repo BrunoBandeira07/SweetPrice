@@ -1,4 +1,4 @@
-import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart } from 'lucide-react';
+import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart, FileText } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -36,17 +36,20 @@ const AppHeader = () => {
              <Link href="/orders" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
                 <ShoppingCart className="inline-block mr-2"/>Encomendas
             </Link>
-            <Link href="/calculator" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+            <Link href="/calculator" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover-border-primary/50 transition-colors">
                 <Cake className="inline-block mr-2"/>Calculadora
             </Link>
-            <Link href="/recipes" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+            <Link href="/recipes" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover-border-primary/50 transition-colors">
                 <BookHeart className="inline-block mr-2"/>Livro de Receitas
             </Link>
-             <Link href="/stock" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+             <Link href="/stock" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover-border-primary/50 transition-colors">
                 <Archive className="inline-block mr-2"/>Estoque
             </Link>
-            <Link href="/customers" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+            <Link href="/customers" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover-border-primary/50 transition-colors">
                 <Users className="inline-block mr-2"/>Clientes
+            </Link>
+            <Link href="/quotes" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+                <FileText className="inline-block mr-2"/>Orçamentos
             </Link>
             <Link href="/costs" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
                 <Settings className="inline-block mr-2"/>Custos
