@@ -53,3 +53,14 @@ export interface Order {
   total: number;
   status: OrderStatus;
 }
+
+export interface Customer {
+  id: string;
+  name: string;
+  cpf?: string;
+  address?: string;
+  phone?: string;
+  instagram?: string;
+  lastOrderDate?: string; // ISO String
+  crmSuggestion?: string;
+}

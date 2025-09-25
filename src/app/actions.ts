@@ -5,6 +5,11 @@ import {
   type SuggestIngredientSubstitutionsInput,
   type SuggestIngredientSubstitutionsOutput,
 } from '@/ai/flows/suggest-ingredient-substitutions';
+import {
+  suggestCrmAction,
+  type SuggestCrmActionInput,
+} from '@/ai/flows/suggest-crm-action';
+
 import { Ingredient, Unit } from '@/lib/types';
 
 interface ActionResult {
@@ -161,4 +166,21 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
         const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
         return { success: false, error: `Falha ao importar: ${errorMessage}` };
     }
+}
+
+interface CrmActionResult {
+  success: boolean;
+  suggestion?: string;
+  error?: string;
+}
+
+export async function getCrmSuggestion(input: SuggestCrmActionInput): Promise<CrmActionResult> {
+  try {
+    const result = await suggestCrmAction(input);
+    return { success: true, suggestion: result.suggestion };
+  } catch (error) {
+    console.error(error);
+    const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
+    return { success: false, error: `Falha ao gerar sugestão de CRM: ${errorMessage}` };
+  }
 }
