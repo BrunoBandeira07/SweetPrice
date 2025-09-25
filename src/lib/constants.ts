@@ -1,4 +1,4 @@
-import type { Ingredient, Unit, Order, Recipe } from './types';
+import type { Ingredient, Unit, Order, Recipe, DeliveryStatus, ProductionStatus } from './types';
 
 export const UNITS: { value: Unit; label: string }[] = [
   { value: 'g', label: 'Gramas (g)' },
@@ -98,7 +98,8 @@ export const INITIAL_ORDERS: Order[] = [
         deliveryDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(),
         items: [{ recipe: MOCK_RECIPE_1, quantity: 1 }],
         total: 15.00,
-        status: 'pending'
+        deliveryStatus: 'pending',
+        productionStatus: 'producing'
     },
     {
         id: '2',
@@ -106,7 +107,8 @@ export const INITIAL_ORDERS: Order[] = [
         deliveryDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
         items: [{ recipe: MOCK_RECIPE_2, quantity: 2 }],
         total: 240.00,
-        status: 'pending'
+        deliveryStatus: 'pending',
+        productionStatus: 'to_do'
     },
      {
         id: '3',
@@ -114,6 +116,15 @@ export const INITIAL_ORDERS: Order[] = [
         deliveryDate: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
         items: [{ recipe: MOCK_RECIPE_1, quantity: 2 }],
         total: 30.00,
-        status: 'delivered'
+        deliveryStatus: 'delivered',
+        productionStatus: 'ready_for_delivery'
     }
 ];
+
+export const PRODUCTION_STATUS_MAP: Record<ProductionStatus, { label: string; color: string }> = {
+    to_do: { label: "A Fazer", color: "bg-gray-200 text-gray-800" },
+    buying_supplies: { label: "Comprando Insumos", color: "bg-blue-200 text-blue-800" },
+    producing: { label: "Produção", color: "bg-yellow-200 text-yellow-800" },
+    finishing: { label: "Acabamento", color: "bg-purple-200 text-purple-800" },
+    ready_for_delivery: { label: "Pronto para Entrega", color: "bg-green-200 text-green-800" },
+};

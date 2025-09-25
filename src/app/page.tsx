@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, DollarSign, Package, ShoppingCart } from 'lucide-react';
 import AppHeader from '@/components/app/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,22 +27,47 @@ const StatCard = ({ title, value, icon: Icon, description }: { title: string, va
 )
 
 export default function DashboardPage() {
-    const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+    const [orders, setOrders] = useState<Order[]>([]);
     const [date, setDate] = useState<Date | undefined>(new Date());
+    
+    useEffect(() => {
+        try {
+            const storedOrders = localStorage.getItem('orders');
+            if (storedOrders) {
+                setOrders(JSON.parse(storedOrders));
+            } else {
+                setOrders(INITIAL_ORDERS);
+                localStorage.setItem('orders', JSON.stringify(INITIAL_ORDERS));
+            }
+        } catch (error) {
+            console.error("Failed to load orders from localStorage", error);
+            setOrders(INITIAL_ORDERS);
+        }
+    }, []);
+
+    const updateOrders = (newOrders: Order[]) => {
+        setOrders(newOrders);
+        localStorage.setItem('orders', JSON.stringify(newOrders));
+    }
 
     const monthlySales = orders
-        .filter(o => o.status === 'delivered' && new Date(o.deliveryDate).getMonth() === new Date().getMonth())
+        .filter(o => o.deliveryStatus === 'delivered' && new Date(o.deliveryDate).getMonth() === new Date().getMonth())
         .reduce((sum, o) => sum + o.total, 0);
 
-    const pendingOrders = orders.filter(o => o.status === 'pending').length;
+    const pendingOrders = orders.filter(o => o.deliveryStatus === 'pending').length;
     
     const upcomingOrders = orders
-        .filter(o => o.status === 'pending' && new Date(o.deliveryDate) >= new Date())
+        .filter(o => o.deliveryStatus === 'pending' && new Date(o.deliveryDate) >= new Date())
         .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
 
-    const handleAddOrder = (newOrder: Omit<Order, 'id'>) => {
-        const orderWithId = { ...newOrder, id: new Date().toISOString() };
-        setOrders(prev => [...prev, orderWithId]);
+    const handleAddOrder = (newOrder: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => {
+        const orderWithId: Order = { 
+            ...newOrder, 
+            id: new Date().toISOString(),
+            deliveryStatus: 'pending',
+            productionStatus: 'to_do',
+        };
+        updateOrders([...orders, orderWithId]);
     }
 
     return (
@@ -77,7 +102,7 @@ export default function DashboardPage() {
                                                 <TableCell className="font-medium">{order.customerName}</TableCell>
                                                 <TableCell>{new Date(order.deliveryDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric'})}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={order.status === 'pending' ? 'secondary' : 'default'}>{order.status}</Badge>
+                                                    <Badge variant={order.deliveryStatus === 'pending' ? 'secondary' : 'default'}>{order.deliveryStatus}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}</TableCell>
                                             </TableRow>
@@ -104,7 +129,7 @@ export default function DashboardPage() {
                                     className="rounded-md"
                                     modifiers={{
                                         deliveryDay: orders
-                                            .filter(o => o.status === 'pending')
+                                            .filter(o => o.deliveryStatus === 'pending')
                                             .map(o => new Date(o.deliveryDate))
                                     }}
                                     modifiersStyles={{

@@ -1,4 +1,4 @@
-import { Cake, BookHeart, Settings, LayoutDashboard, Users } from 'lucide-react';
+import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -29,24 +29,27 @@ const AppHeader = () => {
           Precificação fácil para suas doces criações
         </p>
 
-        <nav className="mt-6 flex justify-center gap-4">
-            <Link href="/" className="text-primary-foreground/90 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-primary">
-                Dashboard
+        <nav className="mt-6 flex justify-center flex-wrap gap-4">
+            <Link href="/" className="text-primary-foreground/90 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+                <LayoutDashboard className="inline-block mr-2"/>Dashboard
+            </Link>
+             <Link href="/orders" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
+                <ShoppingCart className="inline-block mr-2"/>Encomendas
             </Link>
             <Link href="/calculator" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
-                Calculadora
+                <Cake className="inline-block mr-2"/>Calculadora
             </Link>
             <Link href="/recipes" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
-                Livro de Receitas
+                <BookHeart className="inline-block mr-2"/>Livro de Receitas
             </Link>
              <Link href="/stock" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
-                Estoque
+                <Archive className="inline-block mr-2"/>Estoque
             </Link>
             <Link href="/customers" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
-                Clientes
+                <Users className="inline-block mr-2"/>Clientes
             </Link>
             <Link href="/costs" className="text-primary-foreground/70 hover:text-primary-foreground font-semibold pb-1 border-b-2 border-transparent hover:border-primary/50 transition-colors">
-                Custos
+                <Settings className="inline-block mr-2"/>Custos
             </Link>
         </nav>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,14 +30,14 @@ const orderFormSchema = z.object({
 type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 interface AddOrderFormProps {
-    onAddOrder: (order: Omit<Order, 'id'>) => void;
+    onAddOrder: (order: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => void;
 }
 
 export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
     const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
     const { toast } = useToast();
 
-    useState(() => {
+    useEffect(() => {
         try {
             const storedRecipes = localStorage.getItem('savedRecipes');
             if (storedRecipes) {
@@ -46,7 +46,7 @@ export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
         } catch (error) {
             console.error("Failed to load recipes from localStorage", error);
         }
-    });
+    }, []);
 
     const form = useForm<OrderFormValues>({
         resolver: zodResolver(orderFormSchema),
@@ -76,12 +76,11 @@ export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
             return { recipe, quantity: item.quantity };
         });
 
-        const newOrder: Omit<Order, 'id'> = {
+        const newOrder: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'> = {
             customerName: data.customerName,
             deliveryDate: data.deliveryDate.toISOString(),
             items: orderItems,
             total: total,
-            status: 'pending',
         };
         onAddOrder(newOrder);
         reset();

@@ -40,7 +40,9 @@ export interface Recipe {
     suggestedPrice?: number;
 }
 
-export type OrderStatus = 'pending' | 'delivered' | 'cancelled';
+export type DeliveryStatus = 'pending' | 'delivered' | 'cancelled';
+export type ProductionStatus = 'to_do' | 'buying_supplies' | 'producing' | 'finishing' | 'ready_for_delivery';
+
 
 export interface Order {
   id: string;
@@ -51,7 +53,8 @@ export interface Order {
     quantity: number;
   }[];
   total: number;
-  status: OrderStatus;
+  deliveryStatus: DeliveryStatus;
+  productionStatus: ProductionStatus;
 }
 
 export interface Customer {
