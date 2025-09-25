@@ -47,7 +47,7 @@ const IngredientsList = ({ ingredients, onEdit, onDelete }: IngredientsListProps
             <TableHead>Ingrediente</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead className="text-right">Custo Un.</TableHead>
-            <TableHead className="text-right">Fator Perda</TableHead>
+            <TableHead>Estoque</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -61,7 +61,9 @@ const IngredientsList = ({ ingredients, onEdit, onDelete }: IngredientsListProps
               <TableCell className="text-right">
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(ingredient.unitCost || 0)}
               </TableCell>
-              <TableCell className="text-right text-muted-foreground">{ingredient.lossFactor?.toFixed(2) || 'N/A'}</TableCell>
+               <TableCell>
+                {ingredient.stockQuantity !== undefined ? `${ingredient.stockQuantity} ${ingredient.unit}` : 'N/A'}
+              </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end space-x-2">
                   <Button variant="ghost" size="icon" onClick={() => onEdit(ingredient)}>

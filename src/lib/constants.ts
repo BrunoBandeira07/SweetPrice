@@ -17,6 +17,9 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     cost: 5.50,
     supplier: 'Fornecedor A',
     unitCost: 0.0055,
+    stockQuantity: 2000,
+    lowStockThreshold: 500,
+    expirationDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(),
   },
   {
     id: '2',
@@ -26,6 +29,8 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     cost: 4.80,
     supplier: 'Fornecedor B',
      unitCost: 0.0048,
+     stockQuantity: 1500,
+     lowStockThreshold: 500,
   },
   {
     id: '3',
@@ -35,6 +40,9 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     cost: 10.00,
     supplier: 'Granja Feliz',
      unitCost: 0.8333,
+     stockQuantity: 24,
+     lowStockThreshold: 12,
+     expirationDate: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString(),
   },
   {
     id: '4',
@@ -44,6 +52,8 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     cost: 8.50,
     supplier: 'Laticínios Sul',
     unitCost: 0.0425,
+    stockQuantity: 400,
+    lowStockThreshold: 200,
   },
   {
     id: '5',
@@ -53,6 +63,8 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     cost: 15.00,
     supplier: 'Cacau Show',
     unitCost: 0.03,
+    stockQuantity: 100,
+    lowStockThreshold: 250,
   },
 ];
 

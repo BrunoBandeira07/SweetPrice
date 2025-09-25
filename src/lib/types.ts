@@ -11,6 +11,9 @@ export interface Ingredient {
   category?: string;
   unitCost?: number;
   lossFactor?: number;
+  stockQuantity?: number;
+  lowStockThreshold?: number;
+  expirationDate?: string; // ISO String
 }
 
 export type RecipeItemType = 'ingredient' | 'labor' | 'equipment';

@@ -1,18 +1,22 @@
 "use client";
 
 import { useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, RotateCw } from 'lucide-react';
+import { Plus, RotateCw, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 
 import type { Ingredient } from '@/lib/types';
 import { UNITS } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
 
 const formSchema = z.object({
   name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
@@ -23,6 +27,9 @@ const formSchema = z.object({
   category: z.string().optional(),
   unitCost: z.coerce.number().optional(),
   lossFactor: z.coerce.number().optional(),
+  stockQuantity: z.coerce.number().optional(),
+  lowStockThreshold: z.coerce.number().optional(),
+  expirationDate: z.string().optional(),
 });
 
 type IngredientFormValues = z.infer<typeof formSchema>;
@@ -44,10 +51,13 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
       category: '',
       unitCost: undefined,
       lossFactor: undefined,
+      stockQuantity: 0,
+      lowStockThreshold: 0,
+      expirationDate: undefined,
     },
   });
 
-  const { watch, setValue } = form;
+  const { watch, setValue, control } = form;
   const packageSize = watch('packageSize');
   const cost = watch('cost');
   
@@ -76,6 +86,9 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
         category: '',
         unitCost: undefined,
         lossFactor: undefined,
+        stockQuantity: 0,
+        lowStockThreshold: 0,
+        expirationDate: undefined,
       });
     }
   }, [editingIngredient, form]);
@@ -95,6 +108,9 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
       category: '',
       unitCost: undefined,
       lossFactor: undefined,
+      stockQuantity: 0,
+      lowStockThreshold: 0,
+      expirationDate: undefined,
     });
   };
 
@@ -223,6 +239,70 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
               </FormItem>
             )}
           />
+           <FormField
+            control={control}
+            name="stockQuantity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Qtd. em Estoque</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="Ex: 500" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="lowStockThreshold"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Alerta de Estoque Baixo</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="Ex: 100" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Controller
+              name="expirationDate"
+              control={control}
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data de Vencimento</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value), "PPP")
+                          ) : (
+                            <span>Selecione a data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => field.onChange(date?.toISOString())}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
         </div>
         <div className="flex justify-end space-x-2 pt-2">
           {editingIngredient && (
