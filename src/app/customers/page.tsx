@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { Controller } from 'react-hook-form';
 import AppHeader from '@/components/app/header';
 import CustomerList from '@/components/app/customer-list';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { InputMask } from '@/components/ui/input-mask';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Plus } from 'lucide-react';
@@ -100,11 +102,19 @@ export default function CustomersPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="cpf">CPF</Label>
-                                            <Input id="cpf" {...form.register('cpf')} />
+                                            <Controller
+                                                name="cpf"
+                                                control={form.control}
+                                                render={({ field }) => <InputMask id="cpf" mask="999.999.999-99" {...field} />}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="phone">Telefone</Label>
-                                            <Input id="phone" {...form.register('phone')} />
+                                            <Controller
+                                                name="phone"
+                                                control={form.control}
+                                                render={({ field }) => <InputMask id="phone" mask="(99) 99999-9999" {...field} />}
+                                            />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
