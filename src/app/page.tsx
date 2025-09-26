@@ -28,9 +28,10 @@ const StatCard = ({ title, value, icon: Icon, description }: { title: string, va
 
 export default function DashboardPage() {
     const [orders, setOrders] = useState<Order[]>([]);
-    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [date, setDate] = useState<Date | undefined>(undefined);
     
     useEffect(() => {
+        setDate(new Date());
         try {
             const storedOrders = localStorage.getItem('orders');
             if (storedOrders) {
