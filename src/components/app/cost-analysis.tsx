@@ -10,7 +10,7 @@ interface CostAnalysisProps {
   recipeItems: RecipeItem[];
 }
 
-const COLORS = ['#F4B4C5', '#F9E79F', '#B4E4F3', '#D3B4F3', '#B4F3D3', '#fbc6a4', '#b5eAD7', '#ffdac1'];
+const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', '#D3B4F3', '#B4F3D3', '#fbc6a4', '#b5eAD7', '#ffdac1'];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -58,10 +58,10 @@ const CostAnalysis = ({ recipeItems }: CostAnalysisProps) => {
   }, [recipeItems, totalCost]);
 
   return (
-    <Card className="shadow-lg h-full">
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl flex items-center gap-2">
-          <PieChartIcon className="text-primary"/>
+        <CardTitle className="flex items-center gap-2">
+          <PieChartIcon/>
           Análise de Custo
         </CardTitle>
         <CardDescription>
@@ -82,8 +82,8 @@ const CostAnalysis = ({ recipeItems }: CostAnalysisProps) => {
                   fill="#8884d8"
                   dataKey="value"
                   nameKey="name"
-                  stroke="hsl(var(--background))"
-                  strokeWidth={2}
+                  stroke="hsl(var(--card))"
+                  strokeWidth={4}
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

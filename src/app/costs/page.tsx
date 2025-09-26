@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import AppHeader from '@/components/app/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -105,14 +104,12 @@ export default function CostsPage() {
   };
 
   return (
-    <div className="min-h-screen w-full">
-      <AppHeader />
-      <main className="container mx-auto p-4 md:p-8">
+    <div className="w-full">
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Card className="shadow-lg">
+          <Card>
             <CardHeader>
-              <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                <Settings className="text-primary" />
+              <CardTitle className="flex items-center gap-3">
+                <Settings />
                 Custos Fixos e Variáveis
               </CardTitle>
               <CardDescription>
@@ -123,7 +120,7 @@ export default function CostsPage() {
               
               {/* Cost Section */}
               <div>
-                <h3 className="text-lg font-headline font-semibold mb-4">Custos Gerais</h3>
+                <h3 className="text-lg font-semibold mb-4">Custos Gerais</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Object.entries(fieldLabels).slice(0, 6).map(([key, value]) =>(
                     <div key={key} className="space-y-2">
@@ -146,7 +143,7 @@ export default function CostsPage() {
 
               {/* Equipment Power Section */}
               <div>
-                <h3 className="text-lg font-headline font-semibold mb-4">Potência de Equipamentos Elétricos</h3>
+                <h3 className="text-lg font-semibold mb-4">Potência de Equipamentos Elétricos</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Object.entries(fieldLabels).slice(6, 12).map(([key, value]) =>(
                     <div key={key} className="space-y-2">
@@ -161,7 +158,7 @@ export default function CostsPage() {
               
               {/* Gas Equipment Flow Section */}
               <div>
-                <h3 className="text-lg font-headline font-semibold mb-4">Vazão de Equipamentos a Gás</h3>
+                <h3 className="text-lg font-semibold mb-4">Vazão de Equipamentos a Gás</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Object.entries(fieldLabels).slice(12, 15).map(([key, value]) =>(
                      <div key={key} className="space-y-2">
@@ -176,7 +173,7 @@ export default function CostsPage() {
 
                {/* Custom Expenses Section */}
               <div>
-                <h3 className="text-lg font-headline font-semibold mb-4">Outras Despesas</h3>
+                <h3 className="text-lg font-semibold mb-4">Outras Despesas</h3>
                 <div className="space-y-4">
                   {fields.map((field, index) => (
                     <div key={field.id} className="flex flex-col md:flex-row items-end gap-2 p-4 border rounded-lg">
@@ -223,7 +220,6 @@ export default function CostsPage() {
             </CardContent>
           </Card>
         </form>
-      </main>
     </div>
   );
 }

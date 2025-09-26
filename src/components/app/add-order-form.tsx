@@ -91,9 +91,9 @@ export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
     };
 
     return (
-        <Card className="shadow-lg">
+        <Card>
             <CardHeader>
-                <CardTitle className="font-headline text-2xl">Adicionar Nova Encomenda</CardTitle>
+                <CardTitle>Adicionar Nova Encomenda</CardTitle>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -181,7 +181,7 @@ export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
                     <div className="border-t pt-4 space-y-2">
                         <div className="flex justify-between items-center text-lg font-bold">
                             <span>Total da Encomenda:</span>
-                            <span className="text-primary">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}</span>
+                            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}</span>
                         </div>
                     </div>
 

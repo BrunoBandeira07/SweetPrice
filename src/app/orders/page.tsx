@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { format, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import AppHeader from '@/components/app/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +27,7 @@ const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (o
 
     return (
       <Collapsible asChild open={isOpen} onOpenChange={setIsOpen}>
-        <Card className="shadow-md">
+        <Card>
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
@@ -134,16 +133,14 @@ export default function OrdersPage() {
         .sort((a,b) => new Date(b.deliveryDate).getTime() - new Date(a.deliveryDate).getTime());
     
     return (
-        <div className="min-h-screen w-full">
-            <AppHeader/>
-            <main className="container mx-auto p-4 md:p-8">
+        <div className="w-full">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     
                     {/* Pending Orders Column */}
                     <div className="space-y-6">
                         <div className="flex items-center gap-4">
                             <CircleDotDashed className="h-8 w-8 text-primary"/>
-                            <h1 className="font-headline text-3xl">Encomendas Pendentes ({pendingOrders.length})</h1>
+                            <h1 className="text-3xl font-bold">Encomendas Pendentes ({pendingOrders.length})</h1>
                         </div>
                         {pendingOrders.length > 0 ? (
                            <div className="space-y-4">
@@ -162,7 +159,7 @@ export default function OrdersPage() {
                     <div className="space-y-6">
                         <div className="flex items-center gap-4">
                             <CheckCircle2 className="h-8 w-8 text-green-600"/>
-                            <h1 className="font-headline text-3xl">Histórico de Encomendas ({completedOrders.length})</h1>
+                            <h1 className="text-3xl font-bold">Histórico de Encomendas ({completedOrders.length})</h1>
                         </div>
                         {completedOrders.length > 0 ? (
                              <div className="space-y-4">
@@ -177,7 +174,6 @@ export default function OrdersPage() {
                         )}
                     </div>
                 </div>
-            </main>
         </div>
     );
 }

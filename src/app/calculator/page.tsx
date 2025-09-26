@@ -6,7 +6,6 @@ import { INITIAL_INGREDIENTS } from "@/lib/constants";
 import { useSearchParams, useRouter } from 'next/navigation'
 
 
-import AppHeader from "@/components/app/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import IngredientForm from "@/components/app/ingredient-form";
 import IngredientsList from "@/components/app/ingredients-list";
@@ -126,12 +125,10 @@ export default function CalculatorPage() {
   }
 
   return (
-    <div className="min-h-screen w-full">
-      <AppHeader />
-      <main className="container mx-auto p-4 md:p-8 space-y-8">
-        <Card className="shadow-lg">
+    <div className="w-full space-y-8">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-headline text-2xl">Gerenciar Ingredientes</CardTitle>
+            <CardTitle>Gerenciar Ingredientes</CardTitle>
             <ImportSheetDialog onIngredientsImported={handleIngredientsImported}/>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -161,7 +158,6 @@ export default function CalculatorPage() {
             <CostAnalysis recipeItems={recipeItems} />
           </div>
         </div>
-      </main>
     </div>
   );
 }

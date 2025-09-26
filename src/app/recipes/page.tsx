@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import AppHeader from '@/components/app/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -64,13 +63,11 @@ export default function RecipesPage() {
     }
 
     return (
-        <div className="min-h-screen w-full">
-            <AppHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <Card className="shadow-lg">
+        <div className="w-full">
+                <Card>
                     <CardHeader>
-                        <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                            <ChefHat className="text-primary"/>
+                        <CardTitle className="flex items-center gap-3">
+                            <ChefHat />
                             Livro de Receitas
                         </CardTitle>
                         <CardDescription>
@@ -84,7 +81,7 @@ export default function RecipesPage() {
                                     <Card key={recipe.id} className="overflow-hidden">
                                         <CardHeader className="bg-muted/30">
                                             <div className="flex justify-between items-center">
-                                                <CardTitle className="font-headline text-xl">{recipe.name}</CardTitle>
+                                                <CardTitle>{recipe.name}</CardTitle>
                                                 <div className="flex items-center gap-2">
                                                     <Button asChild variant="outline" size="sm">
                                                         <Link href={`/calculator?loadRecipe=${recipe.id}`}>
@@ -159,7 +156,6 @@ export default function RecipesPage() {
                         )}
                     </CardContent>
                 </Card>
-            </main>
         </div>
     );
 }

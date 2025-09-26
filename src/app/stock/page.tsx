@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import AppHeader from '@/components/app/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
-import { Archive, ArrowLeftRight, CalendarIcon, Plus, Minus, AlertCircle, CheckCircle } from 'lucide-react';
+import { Archive, CalendarIcon, Plus, Minus, AlertCircle, CheckCircle } from 'lucide-react';
 import type { Ingredient } from '@/lib/types';
 import { INITIAL_INGREDIENTS } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
@@ -133,13 +132,11 @@ export default function StockPage() {
 
 
   return (
-    <div className="min-h-screen w-full">
-      <AppHeader />
-      <main className="container mx-auto p-4 md:p-8">
-        <Card className="shadow-lg">
+    <div className="w-full">
+        <Card>
           <CardHeader>
-            <CardTitle className="font-headline text-2xl flex items-center gap-3">
-              <Archive className="text-primary" />
+            <CardTitle className="flex items-center gap-3">
+              <Archive/>
               Controle de Estoque
             </CardTitle>
             <CardDescription>
@@ -232,7 +229,6 @@ export default function StockPage() {
             )}
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

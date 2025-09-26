@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import AppHeader from '@/components/app/header';
 import QuoteBuilder from '@/components/app/quote-builder';
 import QuotePreview from '@/components/app/quote-preview';
 import type { Customer, Recipe, RecipeItem } from '@/lib/types';
@@ -66,21 +65,18 @@ export default function QuotesPage() {
     };
 
     return (
-        <div className="min-h-screen w-full">
-            <AppHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                    <div className="lg:col-span-2">
-                        <QuoteBuilder 
-                            customers={customers}
-                            recipes={recipes}
-                            quote={quote}
-                            setQuote={updateQuote}
-                        />
-                    </div>
-                     <div className="lg:col-span-3">
-                        <QuotePreview quote={quote} />
-                    </div>
+        <div className="w-full">
+            <main className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+                <div className="lg:col-span-2">
+                    <QuoteBuilder 
+                        customers={customers}
+                        recipes={recipes}
+                        quote={quote}
+                        setQuote={updateQuote}
+                    />
+                </div>
+                    <div className="lg:col-span-3">
+                    <QuotePreview quote={quote} />
                 </div>
             </main>
         </div>

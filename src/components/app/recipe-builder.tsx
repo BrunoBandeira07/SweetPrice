@@ -155,12 +155,12 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
   };
 
   return (
-    <Card className="shadow-lg h-full">
+    <Card className="h-full">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="font-headline text-2xl flex items-center gap-2">
-              <BookMarked className="text-primary"/>
+            <CardTitle className="flex items-center gap-2">
+              <BookMarked/>
               Montar Receita
             </CardTitle>
             <CardDescription>
@@ -331,7 +331,7 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
       <CardFooter className="flex flex-col items-start space-y-4">
         <Separator />
          <div className="w-full space-y-4 pt-4">
-          <h3 className="text-lg font-semibold font-headline">Definir Preço de Venda</h3>
+          <h3 className="text-lg font-semibold">Definir Preço de Venda</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             <div className="space-y-2">
               <Label>Margem de Lucro</Label>
@@ -356,11 +356,11 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
         <Separator />
         <div className="w-full flex justify-between items-center text-lg font-bold pt-4">
           <span>Custo Total da Receita:</span>
-          <span className="text-primary">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost)}</span>
+          <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost)}</span>
         </div>
         <div className="w-full flex justify-between items-center text-xl font-bold p-4 bg-accent/30 rounded-lg">
-          <span className="text-accent-foreground">Preço de Venda Sugerido:</span>
-          <span className="text-accent-foreground">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(suggestedPrice)}</span>
+          <span>Preço de Venda Sugerido:</span>
+          <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(suggestedPrice)}</span>
         </div>
       </CardFooter>
     </Card>

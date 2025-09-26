@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Controller } from 'react-hook-form';
-import AppHeader from '@/components/app/header';
 import CustomerList from '@/components/app/customer-list';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,13 +75,11 @@ export default function CustomersPage() {
 
 
     return (
-        <div className="min-h-screen w-full">
-            <AppHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                 <Card className="shadow-lg">
+        <div className="w-full">
+                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="font-headline text-2xl">Gerenciar Clientes</CardTitle>
+                            <CardTitle>Gerenciar Clientes</CardTitle>
                             <CardDescription>Adicione, visualize e gerencie seus clientes.</CardDescription>
                         </div>
                          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -139,7 +136,6 @@ export default function CustomersPage() {
                        <CustomerList customers={customers} setCustomers={updateCustomers} />
                     </CardContent>
                 </Card>
-            </main>
         </div>
     );
 }
