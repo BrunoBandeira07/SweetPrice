@@ -105,15 +105,15 @@ export default function CustomersPage() {
                                             <Controller
                                                 name="cpf"
                                                 control={form.control}
-                                                render={({ field }) => <InputMask id="cpf" mask="999.999.999-99" {...field} />}
+                                                render={({ field: { ref, ...field } }) => <InputMask id="cpf" mask="___.___.___-__" replacement={{ _: /\d/ }} {...field} ref={ref} />}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="phone">Telefone</Label>
-                                            <Controller
+                                             <Controller
                                                 name="phone"
                                                 control={form.control}
-                                                render={({ field }) => <InputMask id="phone" mask="(99) 99999-9999" {...field} />}
+                                                render={({ field: { ref, ...field } }) => <InputMask id="phone" mask="(__) _____-____" replacement={{ _: /\d/ }} {...field} ref={ref} />}
                                             />
                                         </div>
                                     </div>
