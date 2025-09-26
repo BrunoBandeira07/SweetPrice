@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookMarked, Plus, Trash2, Save, CookingPot, Clock, Zap } from 'lucide-react';
+import { BookMarked, Plus, Trash2, BookUp, CookingPot, Clock, Zap } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -170,13 +170,13 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
           <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" disabled={recipeItems.length === 0}>
-                <Save className="mr-2"/>
+                <BookUp className="mr-2"/>
                 Salvar Receita
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Salvar Receita</DialogTitle>
+                <DialogTitle>Salvar Receita no Livro</DialogTitle>
                 <DialogDescription>Dê um nome para sua receita para salvá-la no seu Livro de Receitas.</DialogDescription>
               </DialogHeader>
               <div className="space-y-2">

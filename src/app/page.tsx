@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Order } from '@/lib/types';
 import { INITIAL_ORDERS } from '@/lib/constants';
-import AddOrderForm from '@/components/app/add-order-form';
 import UpcomingEvents from '@/components/app/upcoming-events';
 
 const StatCard = ({ title, value, icon: Icon, description, color }: { title: string, value: string, icon: React.ElementType, description: string, color?: string }) => (
@@ -56,16 +55,6 @@ export default function DashboardPage() {
         .filter(o => o.deliveryStatus === 'pending' && new Date(o.deliveryDate) >= new Date())
         .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
 
-    const handleAddOrder = (newOrder: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => {
-        const orderWithId: Order = { 
-            ...newOrder, 
-            id: new Date().toISOString(),
-            deliveryStatus: 'pending',
-            productionStatus: 'to_do',
-        };
-        updateOrders([...orders, orderWithId]);
-    }
-
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold">Welcome back!</h1>
@@ -106,7 +95,6 @@ export default function DashboardPage() {
                             </Table>
                         </CardContent>
                     </Card>
-                    <AddOrderForm onAddOrder={handleAddOrder} />
                 </div>
                 <div className="lg:col-span-1">
                     <UpcomingEvents orders={orders} />

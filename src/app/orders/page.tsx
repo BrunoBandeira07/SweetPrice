@@ -18,6 +18,7 @@ import { INITIAL_ORDERS, PRODUCTION_STATUS_MAP } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { CircleDotDashed, ShoppingCart, CheckCircle2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import AddOrderForm from '@/components/app/add-order-form';
 
 
 const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (orderId: string, status: ProductionStatus) => void; }) => {
@@ -124,6 +125,16 @@ export default function OrdersPage() {
         });
     }
 
+     const handleAddOrder = (newOrder: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => {
+        const orderWithId: Order = { 
+            ...newOrder, 
+            id: new Date().toISOString(),
+            deliveryStatus: 'pending',
+            productionStatus: 'to_do',
+        };
+        updateOrders([...orders, orderWithId]);
+    }
+
     const pendingOrders = orders
         .filter(o => o.deliveryStatus === 'pending')
         .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
@@ -133,7 +144,10 @@ export default function OrdersPage() {
         .sort((a,b) => new Date(b.deliveryDate).getTime() - new Date(a.deliveryDate).getTime());
     
     return (
-        <div className="w-full">
+        <div className="w-full space-y-8">
+                <div>
+                  <AddOrderForm onAddOrder={handleAddOrder} />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     
                     {/* Pending Orders Column */}

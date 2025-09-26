@@ -42,21 +42,21 @@ const costsFormSchema = z.object({
 type CostsFormValues = z.infer<typeof costsFormSchema>;
 
 const fieldLabels: Record<keyof Omit<CostsFormValues, 'customExpenses' | 'gasCylinderSize'>, { label: string, unit?: string, description?: string }> = {
-    kwhPrice: { label: 'Energia elétrica', unit: 'R$/kWh', description: 'Valor do kilowatt/hora' },
-    gasCylinderPrice: { label: 'Gás de cozinha', unit: 'R$', description: 'Valor da botija de gás' },
-    proLabore: { label: 'Pró labore', unit: 'R$', description: 'Valor do seu salário como proprietário' },
-    creditCardFee: { label: 'Taxa da maquineta no Crédito', unit: '%', description: 'Taxa na modalidade cartão de crédito' },
-    indirectCostsRate: { label: 'Alíquota proporcional de custos indiretos', unit: '%', description: 'Material de limpeza, depreciação, etc.' },
-    taxRate: { label: 'Alíquota do imposto', unit: '%', description: 'Imposto sobre arrecadação vigente (Simples, etc.)' },
-    microwavePower: { label: 'Potência do micro-ondas', unit: 'Watts' },
-    blenderPower: { label: 'Potência do liquidificador', unit: 'Watts' },
-    mixerPower: { label: 'Potência da batedeira', unit: 'Watts' },
-    electricOvenPower: { label: 'Potência do forno elétrico', unit: 'Watts' },
-    brigadeiroPanPower: { label: 'Potência da panela de mexer brigadeiro', unit: 'Watts' },
-    fryerPower: { label: 'Potência da fritadeira', unit: 'Watts' },
-    gasFryerFlow: { label: 'Vazão fritadeira a gás', unit: 'kg/h', description: 'Vazão da chama da fritadeira' },
-    stoveBurnerFlow: { label: 'Vazão de uma boca do fogão', unit: 'kg/h', description: 'Vazão da chama de uma boca' },
-    gasOvenFlow: { label: 'Vazão do forno a gás', unit: 'kg/h', description: 'Vazão da chama de todo o forno' },
+    kwhPrice: { label: 'Energia elétrica', unit: 'R$/kWh', description: 'Preço por Kilowatt-hora da sua conta' },
+    gasCylinderPrice: { label: 'Gás de cozinha', unit: 'R$', description: 'Preço total do botijão que você usa' },
+    proLabore: { label: 'Pró labore', unit: 'R$', description: 'Seu salário mensal como dono(a) do negócio' },
+    creditCardFee: { label: 'Taxa da maquineta no Crédito', unit: '%', description: 'Taxa média para vendas no crédito (1x)' },
+    indirectCostsRate: { label: 'Custos Indiretos', unit: '%', description: 'Rateio de aluguel, água, internet, etc.' },
+    taxRate: { label: 'Imposto (Simples Nacional)', unit: '%', description: 'Alíquota do seu regime de imposto' },
+    microwavePower: { label: 'Potência do micro-ondas', unit: 'Watts', description: 'Veja na etiqueta do equipamento' },
+    blenderPower: { label: 'Potência do liquidificador', unit: 'Watts', description: 'Veja na etiqueta do equipamento' },
+    mixerPower: { label: 'Potência da batedeira', unit: 'Watts', description: 'Veja na etiqueta do equipamento' },
+    electricOvenPower: { label: 'Potência do forno elétrico', unit: 'Watts', description: 'Veja na etiqueta do equipamento' },
+    brigadeiroPanPower: { label: 'Potência da panela de mexer brigadeiro', unit: 'Watts', description: 'Veja na etiqueta do equipamento' },
+    fryerPower: { label: 'Potência da fritadeira', unit: 'Watts', description: 'Veja na etiqueta do equipamento' },
+    gasFryerFlow: { label: 'Vazão fritadeira a gás', unit: 'kg/h', description: 'Consumo de gás por hora do equipamento' },
+    stoveBurnerFlow: { label: 'Vazão de uma boca do fogão', unit: 'kg/h', description: 'Consumo de gás por hora de uma boca' },
+    gasOvenFlow: { label: 'Vazão do forno a gás', unit: 'kg/h', description: 'Consumo de gás por hora do forno' },
 };
 
 
