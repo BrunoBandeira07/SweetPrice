@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { getCampaignSuggestions } from '@/app/actions';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const MOCK_CAMPAIGNS: Campaign[] = [
@@ -162,80 +163,83 @@ const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; 
                         Planeje suas ações, defina prazos e liste as tarefas necessárias para o sucesso da sua campanha.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                     <div className="space-y-2">
-                        <Label htmlFor="name">Nome da Campanha</Label>
-                        <div className="flex items-center gap-2">
-                            <Input id="name" {...register('name')} placeholder="Ex: Natal Iluminado" />
-                             <Button type="button" variant="outline" size="icon" onClick={handleGenerateSuggestions} disabled={isSuggesting}>
-                                {isSuggesting ? <Loader2 className="animate-spin" /> : <Lightbulb />}
-                                <span className="sr-only">Gerar Sugestões com IA</span>
-                            </Button>
-                        </div>
-                        {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
-                    </div>
-                    
-                    <div className="space-y-2">
-                         <Label>Período da Campanha</Label>
-                         <Controller
-                            name="dateRange"
-                            control={control}
-                            render={({ field }) => (
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                    <Button
-                                        id="date"
-                                        variant={"outline"}
-                                        className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !field.value?.from && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateRange?.from ? (
-                                        dateRange.to ? (
-                                            <>
-                                            {format(dateRange.from, "LLL dd, y")} -{" "}
-                                            {format(dateRange.to, "LLL dd, y")}
-                                            </>
-                                        ) : (
-                                            format(dateRange.from, "LLL dd, y")
-                                        )
-                                        ) : (
-                                        <span>Selecione o período</span>
-                                        )}
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <ScrollArea className="h-[60vh] pr-6">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Nome da Campanha</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input id="name" {...register('name')} placeholder="Ex: Natal Iluminado" />
+                                    <Button type="button" variant="outline" size="icon" onClick={handleGenerateSuggestions} disabled={isSuggesting}>
+                                        {isSuggesting ? <Loader2 className="animate-spin" /> : <Lightbulb />}
+                                        <span className="sr-only">Gerar Sugestões com IA</span>
                                     </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={dateRange?.from}
-                                        selected={{ from: field.value.from!, to: field.value.to! }}
-                                        onSelect={field.onChange}
-                                        numberOfMonths={2}
-                                    />
-                                    </PopoverContent>
-                                </Popover>
-                            )}
-                         />
-                         {form.formState.errors.dateRange && <p className="text-sm text-destructive">{form.formState.errors.dateRange?.from?.message || form.formState.errors.dateRange?.to?.message}</p>}
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Lista de Tarefas</Label>
-                         {fields.map((item, index) => (
-                            <div key={item.id} className="flex items-center gap-2">
-                                <Input {...register(`tasks.${index}.text`)} placeholder={`Tarefa ${index + 1}`} />
-                                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 /></Button>
+                                </div>
+                                {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
                             </div>
-                        ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => append({ text: '' })}>
-                            <Plus className="mr-2 h-4 w-4" /> Adicionar Tarefa
-                        </Button>
-                    </div>
+                            
+                            <div className="space-y-2">
+                                <Label>Período da Campanha</Label>
+                                <Controller
+                                    name="dateRange"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                            <Button
+                                                id="date"
+                                                variant={"outline"}
+                                                className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !field.value?.from && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {dateRange?.from ? (
+                                                dateRange.to ? (
+                                                    <>
+                                                    {format(dateRange.from, "LLL dd, y")} -{" "}
+                                                    {format(dateRange.to, "LLL dd, y")}
+                                                    </>
+                                                ) : (
+                                                    format(dateRange.from, "LLL dd, y")
+                                                )
+                                                ) : (
+                                                <span>Selecione o período</span>
+                                                )}
+                                            </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                initialFocus
+                                                mode="range"
+                                                defaultMonth={dateRange?.from}
+                                                selected={{ from: field.value.from!, to: field.value.to! }}
+                                                onSelect={field.onChange}
+                                                numberOfMonths={2}
+                                            />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                />
+                                {form.formState.errors.dateRange && <p className="text-sm text-destructive">{form.formState.errors.dateRange?.from?.message || form.formState.errors.dateRange?.to?.message}</p>}
+                            </div>
 
-                    <DialogFooter>
+                            <div className="space-y-2">
+                                <Label>Lista de Tarefas</Label>
+                                {fields.map((item, index) => (
+                                    <div key={item.id} className="flex items-center gap-2">
+                                        <Input {...register(`tasks.${index}.text`)} placeholder={`Tarefa ${index + 1}`} />
+                                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 /></Button>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" size="sm" onClick={() => append({ text: '' })}>
+                                    <Plus className="mr-2 h-4 w-4" /> Adicionar Tarefa
+                                </Button>
+                            </div>
+                        </div>
+                    </ScrollArea>
+                    <DialogFooter className="pt-4">
                         <DialogClose asChild>
                             <Button type="button" variant="secondary">Cancelar</Button>
                         </DialogClose>
@@ -328,7 +332,7 @@ const CampaignCard = ({ campaign, onUpdate, onDelete }: { campaign: Campaign, on
                         </DropdownMenuContent>
                     </DropdownMenu>
                     <p className="text-xs text-muted-foreground">
-                        {campaign.status === 'completed' ? 'Finalizada' : `Termina em ${formatDistanceToNow(new Date(campaign.endDate), { locale: ptBR, addSuffix: true })}`}
+                        {campaign.status === 'completed' ? 'Finalizada' : `Termina ${formatDistanceToNow(new Date(campaign.endDate), { locale: ptBR, addSuffix: true })}`}
                     </p>
                 </div>
             </CardHeader>
@@ -457,3 +461,5 @@ export default function PlannerPage() {
         </div>
     );
 }
+
+    

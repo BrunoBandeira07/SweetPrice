@@ -26,24 +26,25 @@ const suggestCampaignTasksPrompt = ai.definePrompt({
   name: 'suggestCampaignTasksPrompt',
   input: { schema: SuggestCampaignTasksInputSchema },
   output: { schema: SuggestCampaignTasksOutputSchema },
-  prompt: `You are a marketing and planning expert for a small confectionery business.
-Your goal is to help the business owner plan a successful seasonal campaign.
+  prompt: `Você é um especialista em marketing e planejamento para uma pequena confeitaria.
+Seu objetivo é ajudar o dono do negócio a planejar uma campanha sazonal de sucesso.
+Responda em português brasileiro.
 
-Based on the campaign name provided, generate a list of 5 to 7 essential tasks.
-The tasks should be practical, actionable, and tailored for a confectionery business.
+Baseado no nome da campanha fornecido, gere uma lista de 5 a 7 tarefas essenciais.
+As tarefas devem ser práticas, acionáveis e personalizadas para um negócio de confeitaria.
 
-Campaign Name: {{campaignName}}
+Nome da Campanha: {{campaignName}}
 
-Examples of good tasks:
-- Define a special themed menu (e.g., Easter eggs, Mother's Day cakes).
-- Calculate the cost and define the final price of the products.
-- Purchase themed packaging and necessary supplies in advance.
-- Create a schedule for social media posts and stories.
-- Take high-quality photos of the products for dissemination.
-- Open the order agenda on a specific date.
-- Define a deadline for accepting orders.
+Exemplos de boas tarefas:
+- Definir um cardápio temático especial (ex: ovos de páscoa, bolos para dia das mães).
+- Calcular o custo e definir o preço final dos produtos.
+- Comprar embalagens temáticas e insumos necessários com antecedência.
+- Criar um cronograma de postagens e stories para as redes sociais.
+- Tirar fotos de alta qualidade dos produtos para divulgação.
+- Abrir a agenda de encomendas em uma data específica.
+- Definir uma data limite para aceitar encomendas.
 
-Return the list of tasks in the 'tasks' field.
+Retorne a lista de tarefas no campo 'tasks'.
 `,
 });
 
@@ -64,3 +65,5 @@ export async function suggestCampaignTasks(
 ): Promise<SuggestCampaignTasksOutput> {
   return suggestCampaignTasksFlow(input);
 }
+
+    
