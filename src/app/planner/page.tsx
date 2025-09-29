@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Trash2, Calendar as CalendarIcon, MoreVertical, Archive, Edit, CheckCircle2, ListTodo, Circle } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, MoreVertical, Archive, Edit, CheckCircle2, ListTodo, Circle, Lightbulb, Loader2 } from 'lucide-react';
 import { Campaign, CampaignStatus, CampaignTask } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { getCampaignSuggestions } from '@/app/actions';
 
 
 const MOCK_CAMPAIGNS: Campaign[] = [
@@ -72,6 +73,9 @@ const STATUS_MAP: Record<CampaignStatus, { label: string; className: string; ico
 
 const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; campaign?: Campaign }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const { toast } = useToast();
+
     const form = useForm<CampaignFormValues>({
         resolver: zodResolver(campaignFormSchema),
         defaultValues: {
@@ -81,13 +85,45 @@ const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; 
         }
     });
 
-    const { control, register, handleSubmit, watch } = form;
-    const { fields, append, remove } = useFieldArray({
+    const { control, register, handleSubmit, watch, getValues, reset } = form;
+    const { fields, append, remove, replace } = useFieldArray({
         control,
         name: 'tasks'
     });
     
     const dateRange = watch('dateRange');
+
+    const handleGenerateSuggestions = async () => {
+        const campaignName = getValues('name');
+        if (!campaignName) {
+            toast({
+                variant: 'destructive',
+                title: 'Nome da Campanha Vazio',
+                description: 'Por favor, insira um nome para a campanha antes de pedir sugestões.'
+            });
+            return;
+        }
+
+        setIsSuggesting(true);
+        const result = await getCampaignSuggestions(campaignName);
+        setIsSuggesting(false);
+
+        if (result.success && result.tasks) {
+            const newTasks = result.tasks.map(taskText => ({ text: taskText }));
+            replace(newTasks);
+            toast({
+                title: 'Tarefas Sugeridas!',
+                description: 'A IA preencheu a lista de tarefas para você.'
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao Gerar Sugestões',
+                description: result.error
+            });
+        }
+    }
+
 
     const onSubmit = (data: CampaignFormValues) => {
         const newCampaign: Campaign = {
@@ -99,7 +135,11 @@ const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; 
             tasks: data.tasks ? data.tasks.map((t, i) => ({ id: campaign?.tasks[i]?.id || `${new Date().toISOString()}-${i}`, text: t.text, completed: campaign?.tasks[i]?.completed || false })) : [],
         }
         onSave(newCampaign);
-        form.reset();
+        reset({
+            name: '',
+            dateRange: { from: undefined, to: undefined },
+            tasks: [{ text: '' }],
+        });
         setIsOpen(false);
     }
     
@@ -125,7 +165,13 @@ const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                      <div className="space-y-2">
                         <Label htmlFor="name">Nome da Campanha</Label>
-                        <Input id="name" {...register('name')} placeholder="Ex: Natal Iluminado" />
+                        <div className="flex items-center gap-2">
+                            <Input id="name" {...register('name')} placeholder="Ex: Natal Iluminado" />
+                             <Button type="button" variant="outline" size="icon" onClick={handleGenerateSuggestions} disabled={isSuggesting}>
+                                {isSuggesting ? <Loader2 className="animate-spin" /> : <Lightbulb />}
+                                <span className="sr-only">Gerar Sugestões com IA</span>
+                            </Button>
+                        </div>
                         {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
                     </div>
                     

@@ -9,6 +9,12 @@ import {
   suggestCrmAction,
   type SuggestCrmActionInput,
 } from '@/ai/flows/suggest-crm-action';
+import {
+  suggestCampaignTasks,
+  type SuggestCampaignTasksInput,
+  type SuggestCampaignTasksOutput,
+} from '@/ai/flows/suggest-campaign-tasks';
+
 
 import { Ingredient, Unit } from '@/lib/types';
 
@@ -182,5 +188,25 @@ export async function getCrmSuggestion(input: SuggestCrmActionInput): Promise<Cr
     console.error(error);
     const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
     return { success: false, error: `Falha ao gerar sugestão de CRM: ${errorMessage}` };
+  }
+}
+
+interface CampaignSuggestionsResult {
+  success: boolean;
+  tasks?: string[];
+  error?: string;
+}
+
+export async function getCampaignSuggestions(campaignName: string): Promise<CampaignSuggestionsResult> {
+  if (!campaignName) {
+    return { success: false, error: "O nome da campanha não pode ser vazio." };
+  }
+  try {
+    const result = await suggestCampaignTasks({ campaignName });
+    return { success: true, tasks: result.tasks };
+  } catch (error) {
+    console.error(error);
+    const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
+    return { success: false, error: `Falha ao gerar sugestões: ${errorMessage}` };
   }
 }
