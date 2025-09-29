@@ -346,30 +346,32 @@ const CampaignCard = ({ campaign, onUpdate, onDelete }: { campaign: Campaign, on
                         </p>
                     </div>
                 </CardHeader>
-                <CollapsibleContent>
-                    <CardContent className="flex-grow">
-                        <div className="space-y-4">
-                            <div>
-                                <div className="flex justify-between items-center mb-2">
-                                     <h4 className="text-sm font-semibold">Progresso</h4>
-                                     <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
-                                </div>
-                                <div className="w-full bg-muted rounded-full h-2.5">
-                                    <div className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
-                                </div>
+                <CardContent className="flex-grow">
+                    <div className="space-y-4">
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                    <h4 className="text-sm font-semibold">Progresso</h4>
+                                    <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
                             </div>
-                            <div>
-                                <h4 className="text-sm font-semibold mb-2">Tarefas</h4>
-                                <div className="space-y-2">
-                                    {campaign.tasks.length > 0 ? campaign.tasks.map(task => (
-                                        <div key={task.id} className="flex items-center space-x-2">
-                                            <Checkbox id={task.id} checked={task.completed} onCheckedChange={() => handleTaskToggle(task.id)} />
-                                            <label htmlFor={task.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 data-[completed=true]:line-through" data-completed={task.completed}>
-                                                {task.text}
-                                            </label>
-                                        </div>
-                                    )) : <p className="text-sm text-muted-foreground">Nenhuma tarefa para esta campanha.</p>}
-                                </div>
+                            <div className="w-full bg-muted rounded-full h-2.5">
+                                <div className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+                <CollapsibleContent>
+                    <CardContent className="pt-4">
+                        <div>
+                            <h4 className="text-sm font-semibold mb-2">Tarefas</h4>
+                            <div className="space-y-2">
+                                {campaign.tasks.length > 0 ? campaign.tasks.map(task => (
+                                    <div key={task.id} className="flex items-center space-x-2">
+                                        <Checkbox id={task.id} checked={task.completed} onCheckedChange={() => handleTaskToggle(task.id)} />
+                                        <label htmlFor={task.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 data-[completed=true]:line-through" data-completed={task.completed}>
+                                            {task.text}
+                                        </label>
+                                    </div>
+                                )) : <p className="text-sm text-muted-foreground">Nenhuma tarefa para esta campanha.</p>}
                             </div>
                         </div>
                     </CardContent>
