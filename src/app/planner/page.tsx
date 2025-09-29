@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Trash2, Calendar as CalendarIcon, MoreVertical, Archive, Edit, CheckCircle2, ListTodo, Circle, Lightbulb, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, MoreVertical, Archive, Edit, CheckCircle2, ListTodo, Circle, Lightbulb, Loader2, ChevronDown } from 'lucide-react';
 import { Campaign, CampaignStatus, CampaignTask } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { getCampaignSuggestions } from '@/app/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 const MOCK_CAMPAIGNS: Campaign[] = [
@@ -254,6 +255,7 @@ const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; 
 
 const CampaignCard = ({ campaign, onUpdate, onDelete }: { campaign: Campaign, onUpdate: (campaign: Campaign) => void, onDelete: (id: string) => void }) => {
     const { toast } = useToast();
+    const [isOpen, setIsOpen] = useState(true);
     const statusInfo = STATUS_MAP[campaign.status];
     const progress = campaign.tasks.length > 0 ? (campaign.tasks.filter(t => t.completed).length / campaign.tasks.length) * 100 : 0;
     
@@ -272,100 +274,111 @@ const CampaignCard = ({ campaign, onUpdate, onDelete }: { campaign: Campaign, on
 
 
     return (
-        <Card className="flex flex-col">
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle>{campaign.name}</CardTitle>
-                        <CardDescription>
-                            {format(new Date(campaign.startDate), 'dd/MM/yyyy')} - {format(new Date(campaign.endDate), 'dd/MM/yyyy')}
-                        </CardDescription>
-                    </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                           <Button variant="ghost" size="icon"><MoreVertical /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                             <CampaignForm onSave={onUpdate} campaign={campaign}/>
-                             <DropdownMenuItem onClick={() => handleStatusChange(campaign.status === 'archived' ? 'planning' : 'archived')}>
-                                <Archive className="mr-2 h-4 w-4" />
-                                <span>{campaign.status === 'archived' ? 'Desarquivar' : 'Arquivar'}</span>
-                            </DropdownMenuItem>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      <span>Excluir</span>
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Essa ação não pode ser desfeita. Isso excluirá permanentemente a campanha e todas as suas tarefas.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => onDelete(campaign.id)} className="bg-destructive hover:bg-destructive/90">Deletar</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                 <div className="flex items-center gap-2 mt-4">
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                           <Badge variant="outline" className={cn("cursor-pointer", statusInfo.className)}>
-                                <statusInfo.icon className="h-3 w-3 mr-1" />
-                                {statusInfo.label}
-                            </Badge>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            {Object.entries(STATUS_MAP).map(([key, value]) => (
-                                <DropdownMenuItem key={key} onClick={() => handleStatusChange(key as CampaignStatus)}>
-                                    <value.icon className="mr-2 h-4 w-4" />
-                                    <span>{value.label}</span>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <p className="text-xs text-muted-foreground">
-                        {campaign.status === 'completed' ? 'Finalizada' : `Termina ${formatDistanceToNow(new Date(campaign.endDate), { locale: ptBR, addSuffix: true })}`}
-                    </p>
-                </div>
-            </CardHeader>
-            <CardContent className="flex-grow">
-                <div className="space-y-4">
-                    <div>
-                        <div className="flex justify-between items-center mb-2">
-                             <h4 className="text-sm font-semibold">Progresso</h4>
-                             <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
+         <Collapsible asChild open={isOpen} onOpenChange={setIsOpen} defaultOpen>
+            <Card className="flex flex-col">
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div className="flex-grow">
+                            <CardTitle>{campaign.name}</CardTitle>
+                            <CardDescription>
+                                {format(new Date(campaign.startDate), 'dd/MM/yyyy')} - {format(new Date(campaign.endDate), 'dd/MM/yyyy')}
+                            </CardDescription>
                         </div>
-                        <div className="w-full bg-muted rounded-full h-2.5">
-                            <div className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                        <div className="flex items-center gap-1">
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                   <Button variant="ghost" size="icon"><MoreVertical /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                     <CampaignForm onSave={onUpdate} campaign={campaign}/>
+                                     <DropdownMenuItem onClick={() => handleStatusChange(campaign.status === 'archived' ? 'planning' : 'archived')}>
+                                        <Archive className="mr-2 h-4 w-4" />
+                                        <span>{campaign.status === 'archived' ? 'Desarquivar' : 'Arquivar'}</span>
+                                    </DropdownMenuItem>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                              <Trash2 className="mr-2 h-4 w-4" />
+                                              <span>Excluir</span>
+                                          </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Essa ação não pode ser desfeita. Isso excluirá permanentemente a campanha e todas as suas tarefas.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => onDelete(campaign.id)} className="bg-destructive hover:bg-destructive/90">Deletar</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <CollapsibleTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <ChevronDown className={cn("transition-transform", isOpen && 'rotate-180')} />
+                                </Button>
+                            </CollapsibleTrigger>
                         </div>
                     </div>
-                    <div>
-                        <h4 className="text-sm font-semibold mb-2">Tarefas</h4>
-                        <div className="space-y-2">
-                            {campaign.tasks.length > 0 ? campaign.tasks.map(task => (
-                                <div key={task.id} className="flex items-center space-x-2">
-                                    <Checkbox id={task.id} checked={task.completed} onCheckedChange={() => handleTaskToggle(task.id)} />
-                                    <label htmlFor={task.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 data-[completed=true]:line-through" data-completed={task.completed}>
-                                        {task.text}
-                                    </label>
+                     <div className="flex items-center gap-2 mt-4">
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                               <Badge variant="outline" className={cn("cursor-pointer", statusInfo.className)}>
+                                    <statusInfo.icon className="h-3 w-3 mr-1" />
+                                    {statusInfo.label}
+                                </Badge>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                {Object.entries(STATUS_MAP).map(([key, value]) => (
+                                    <DropdownMenuItem key={key} onClick={() => handleStatusChange(key as CampaignStatus)}>
+                                        <value.icon className="mr-2 h-4 w-4" />
+                                        <span>{value.label}</span>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <p className="text-xs text-muted-foreground">
+                            {campaign.status === 'completed' ? 'Finalizada' : `Termina ${formatDistanceToNow(new Date(campaign.endDate), { locale: ptBR, addSuffix: true })}`}
+                        </p>
+                    </div>
+                </CardHeader>
+                <CollapsibleContent>
+                    <CardContent className="flex-grow">
+                        <div className="space-y-4">
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                     <h4 className="text-sm font-semibold">Progresso</h4>
+                                     <span className="text-xs text-muted-foreground">{progress.toFixed(0)}%</span>
                                 </div>
-                            )) : <p className="text-sm text-muted-foreground">Nenhuma tarefa para esta campanha.</p>}
+                                <div className="w-full bg-muted rounded-full h-2.5">
+                                    <div className="bg-primary h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-semibold mb-2">Tarefas</h4>
+                                <div className="space-y-2">
+                                    {campaign.tasks.length > 0 ? campaign.tasks.map(task => (
+                                        <div key={task.id} className="flex items-center space-x-2">
+                                            <Checkbox id={task.id} checked={task.completed} onCheckedChange={() => handleTaskToggle(task.id)} />
+                                            <label htmlFor={task.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 data-[completed=true]:line-through" data-completed={task.completed}>
+                                                {task.text}
+                                            </label>
+                                        </div>
+                                    )) : <p className="text-sm text-muted-foreground">Nenhuma tarefa para esta campanha.</p>}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </CardContent>
-            <CardFooter>
-                 <p className="text-xs text-muted-foreground">Total de tarefas: {campaign.tasks.length}</p>
-            </CardFooter>
-        </Card>
+                    </CardContent>
+                    <CardFooter>
+                         <p className="text-xs text-muted-foreground">Total de tarefas: {campaign.tasks.length}</p>
+                    </CardFooter>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
     );
 }
 
@@ -461,5 +474,3 @@ export default function PlannerPage() {
         </div>
     );
 }
-
-    
