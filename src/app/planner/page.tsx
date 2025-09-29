@@ -445,7 +445,7 @@ export default function PlannerPage() {
             </div>
             
             {activeCampaigns.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
                     {activeCampaigns.map(campaign => (
                         <CampaignCard key={campaign.id} campaign={campaign} onUpdate={handleSaveCampaign} onDelete={handleDeleteCampaign} />
                     ))}
