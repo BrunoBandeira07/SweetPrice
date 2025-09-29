@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 
@@ -61,16 +60,8 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
                                 .filter(o => o.deliveryStatus === 'pending')
                                 .map(o => new Date(o.deliveryDate))
                         }}
-                        modifiersStyles={{
-                            deliveryDay: {
-                                color: 'hsl(var(--primary-foreground))',
-                                backgroundColor: 'hsl(var(--primary))',
-                                borderRadius: '9999px',
-                            },
-                            today: {
-                                fontWeight: 'bold',
-                                color: 'hsl(var(--primary))'
-                            }
+                        modifierClassNames={{
+                           deliveryDay: 'bg-primary text-primary-foreground rounded-full',
                         }}
                     />
                 ) : (
