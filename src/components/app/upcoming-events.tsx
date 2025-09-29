@@ -7,6 +7,7 @@ import { Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 import { CalendarDays } from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
 
 interface UpcomingEventsProps {
     orders: Order[];
@@ -17,6 +18,7 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
     const { toast } = useToast();
 
     useEffect(() => {
+        // This ensures the date is only set on the client-side after hydration
         setDate(new Date());
     }, []);
 
@@ -47,29 +49,35 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center p-0">
-                <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    onDayClick={handleDayClick}
-                    className="rounded-md"
-                    modifiers={{
-                        deliveryDay: orders
-                            .filter(o => o.deliveryStatus === 'pending')
-                            .map(o => new Date(o.deliveryDate))
-                    }}
-                    modifiersStyles={{
-                        deliveryDay: {
-                            color: 'hsl(var(--primary-foreground))',
-                            backgroundColor: 'hsl(var(--primary))',
-                            borderRadius: '9999px',
-                        },
-                        today: {
-                            fontWeight: 'bold',
-                            color: 'hsl(var(--primary))'
-                        }
-                    }}
-                />
+                {date ? (
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        onDayClick={handleDayClick}
+                        className="rounded-md"
+                        modifiers={{
+                            deliveryDay: orders
+                                .filter(o => o.deliveryStatus === 'pending')
+                                .map(o => new Date(o.deliveryDate))
+                        }}
+                        modifiersStyles={{
+                            deliveryDay: {
+                                color: 'hsl(var(--primary-foreground))',
+                                backgroundColor: 'hsl(var(--primary))',
+                                borderRadius: '9999px',
+                            },
+                            today: {
+                                fontWeight: 'bold',
+                                color: 'hsl(var(--primary))'
+                            }
+                        }}
+                    />
+                ) : (
+                    <div className="p-3">
+                        <Skeleton className="w-[280px] h-[330px]" />
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { DollarSign, Package, ShoppingCart } from 'lucide-react';
+import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Order } from '@/lib/types';
+import { Order, Customer } from '@/lib/types';
 import { INITIAL_ORDERS } from '@/lib/constants';
 import UpcomingEvents from '@/components/app/upcoming-events';
 
@@ -24,45 +24,50 @@ const StatCard = ({ title, value, icon: Icon, description, color }: { title: str
 
 export default function DashboardPage() {
     const [orders, setOrders] = useState<Order[]>([]);
+    const [customers, setCustomers] = useState<Customer[]>([]);
     
     useEffect(() => {
         try {
             const storedOrders = localStorage.getItem('orders');
-            if (storedOrders) {
+             if (storedOrders) {
                 setOrders(JSON.parse(storedOrders));
             } else {
-                setOrders(INITIAL_ORDERS);
-                localStorage.setItem('orders', JSON.stringify(INITIAL_ORDERS));
+                setOrders(INITIAL_ORDERS)
             }
         } catch (error) {
-            console.error("Failed to load orders from localStorage", error);
-            setOrders(INITIAL_ORDERS);
+           console.error("Failed to load orders from localStorage", error);
+           setOrders(INITIAL_ORDERS);
+        }
+        
+        try {
+            const storedCustomers = localStorage.getItem('customers');
+            if (storedCustomers) {
+                setCustomers(JSON.parse(storedCustomers));
+            }
+        } catch (error) {
+            console.error("Failed to load customers from localStorage", error);
         }
     }, []);
 
-    const updateOrders = (newOrders: Order[]) => {
-        setOrders(newOrders);
-        localStorage.setItem('orders', JSON.stringify(newOrders));
-    }
 
     const monthlySales = orders
         .filter(o => o.deliveryStatus === 'delivered' && new Date(o.deliveryDate).getMonth() === new Date().getMonth())
         .reduce((sum, o) => sum + o.total, 0);
 
-    const pendingOrders = orders.filter(o => o.deliveryStatus === 'pending').length;
+    const pendingOrdersCount = orders.filter(o => o.deliveryStatus === 'pending').length;
     
     const upcomingOrders = orders
         .filter(o => o.deliveryStatus === 'pending' && new Date(o.deliveryDate) >= new Date())
-        .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
+        .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
+        .slice(0, 5); // Limit to 5 upcoming orders
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold">Welcome back!</h1>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Vendas no Mês" value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySales)} icon={DollarSign} description="Total de vendas em encomendas entregues" color="bg-[hsl(var(--chart-1))]/30" />
-                <StatCard title="Encomendas Pendentes" value={`+${pendingOrders}`} icon={ShoppingCart} description="Total de encomendas a serem produzidas/entregues" color="bg-[hsl(var(--chart-2))]/30" />
-                <StatCard title="Novos Clientes" value="+12" icon={Package} description="+5% em relação ao mês passado (placeholder)" color="bg-[hsl(var(--chart-3))]/30"/>
-                <StatCard title="Estoque Baixo" value="3 Itens" icon={Package} description="Itens que precisam de reposição (placeholder)" />
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <StatCard title="Vendas no Mês" value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySales)} icon={DollarSign} description="Total de vendas em encomendas entregues" color="bg-card" />
+                <StatCard title="Encomendas Pendentes" value={`+${pendingOrdersCount}`} icon={ShoppingCart} description="Total de encomendas a serem produzidas/entregues" color="bg-card" />
+                <StatCard title="Total de Clientes" value={`${customers.length}`} icon={Users} description="Número de clientes cadastrados" color="bg-card"/>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 <div className="lg:col-span-2 space-y-8">
@@ -71,28 +76,35 @@ export default function DashboardPage() {
                             <CardTitle>Próximas Encomendas</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Cliente</TableHead>
-                                        <TableHead>Entrega</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Total</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {upcomingOrders.map(order => (
-                                        <TableRow key={order.id}>
-                                            <TableCell className="font-medium">{order.customerName}</TableCell>
-                                            <TableCell>{new Date(order.deliveryDate).toLocaleDateString('pt-br')}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={order.deliveryStatus === 'pending' ? 'secondary' : 'default'}>{order.deliveryStatus}</Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}</TableCell>
+                             {upcomingOrders.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Cliente</TableHead>
+                                            <TableHead>Entrega</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Total</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {upcomingOrders.map(order => (
+                                            <TableRow key={order.id}>
+                                                <TableCell className="font-medium">{order.customerName}</TableCell>
+                                                <TableCell>{new Date(order.deliveryDate).toLocaleDateString('pt-br')}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={'secondary'}>{order.productionStatus}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="text-center py-10 text-muted-foreground">
+                                    <ShoppingCart className="mx-auto h-12 w-12" />
+                                    <p className="mt-4">Nenhuma encomenda futura encontrada.</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
