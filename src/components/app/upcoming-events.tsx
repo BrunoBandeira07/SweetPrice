@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarDays } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
+import { CalendarDays } from 'lucide-react';
 
 interface UpcomingEventsProps {
     orders: Order[];
