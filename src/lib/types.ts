@@ -67,3 +67,20 @@ export interface Customer {
   lastOrderDate?: string; // ISO String
   crmSuggestion?: string;
 }
+
+export type CampaignStatus = 'planning' | 'in_progress' | 'completed' | 'archived';
+
+export interface CampaignTask {
+    id: string;
+    text: string;
+    completed: boolean;
+}
+
+export interface Campaign {
+    id: string;
+    name: string;
+    status: CampaignStatus;
+    startDate: string; // ISO String
+    endDate: string; // ISO String
+    tasks: CampaignTask[];
+}
