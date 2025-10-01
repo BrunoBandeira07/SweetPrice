@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Order, Customer, Ingredient } from '@/lib/types';
 import { INITIAL_INGREDIENTS, INITIAL_ORDERS } from '@/lib/constants';
 import UpcomingEvents from '@/components/app/upcoming-events';
+import { cn } from '@/lib/utils';
 
-const StatCard = ({ title, value, icon: Icon, description }: { title: string, value: string, icon: React.ElementType, description: string }) => (
-    <Card>
+const StatCard = ({ title, value, icon: Icon, description, className }: { title: string, value: string, icon: React.ElementType, description: string, className?: string }) => (
+    <Card className={className}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
             <Icon className="h-4 w-4 text-muted-foreground" />
@@ -85,7 +86,13 @@ export default function DashboardPage() {
                 <StatCard title="Vendas no Mês" value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySales)} icon={DollarSign} description="Total de vendas em encomendas entregues" />
                 <StatCard title="Encomendas Pendentes" value={`+${pendingOrdersCount}`} icon={ShoppingCart} description="Total de encomendas a serem produzidas/entregues" />
                 <StatCard title="Total de Clientes" value={`${customers.length}`} icon={Users} description="Número de clientes cadastrados" />
-                <StatCard title="Estoque Crítico" value={`${criticalStockCount}`} icon={AlertTriangle} description="Itens com estoque baixo ou zerado" />
+                <StatCard 
+                    title="Estoque Crítico" 
+                    value={`${criticalStockCount}`} 
+                    icon={AlertTriangle} 
+                    description="Itens com estoque baixo ou zerado"
+                    className={cn(criticalStockCount > 0 && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800 [&>div>svg]:text-yellow-800 dark:[&>div>svg]:text-yellow-300")}
+                />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 <div className="lg:col-span-2 space-y-8">
