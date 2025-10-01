@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
-import { Alegreya } from 'next/font/google';
+import { Alegreya_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/app/app-sidebar';
 import { cn } from '@/lib/utils';
 
-const alegreya = Alegreya({ 
+const alegreya = Alegreya_Sans({ 
   subsets: ['latin'], 
   display: 'swap',
   variable: '--font-alegreya',
+  weight: ['400', '700'],
 });
 
 export const metadata: Metadata = {
