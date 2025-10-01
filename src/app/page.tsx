@@ -1,23 +1,26 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react';
+import { DollarSign, Package, ShoppingCart, Users, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Order, Customer } from '@/lib/types';
-import { INITIAL_ORDERS } from '@/lib/constants';
+import { Order, Customer, Ingredient } from '@/lib/types';
+import { INITIAL_ORDERS, INITIAL_INGREDIENTS } from '@/lib/constants';
 import UpcomingEvents from '@/components/app/upcoming-events';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-const StatCard = ({ title, value, icon: Icon, description, color }: { title: string, value: string, icon: React.ElementType, description: string, color?: string }) => (
-    <Card className={color}>
+const StatCard = ({ title, value, icon: Icon, description, color, children }: { title: string, value: string, icon: React.ElementType, description: string, color?: string, children?: React.ReactNode }) => (
+    <Card className={cn(color, "flex flex-col")}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
             <Icon className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-grow">
             <div className="text-2xl font-bold">{value}</div>
             <p className="text-xs text-muted-foreground">{description}</p>
+            {children}
         </CardContent>
     </Card>
 )
@@ -25,6 +28,7 @@ const StatCard = ({ title, value, icon: Icon, description, color }: { title: str
 export default function DashboardPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     
     useEffect(() => {
         try {
@@ -47,6 +51,17 @@ export default function DashboardPage() {
         } catch (error) {
             console.error("Failed to load customers from localStorage", error);
         }
+
+        try {
+            const storedIngredients = localStorage.getItem('ingredients');
+            if (storedIngredients) {
+                setIngredients(JSON.parse(storedIngredients));
+            } else {
+                setIngredients(INITIAL_INGREDIENTS);
+            }
+        } catch (error) {
+            console.error("Failed to load ingredients from localStorage", error);
+        }
     }, []);
 
 
@@ -60,14 +75,38 @@ export default function DashboardPage() {
         .filter(o => o.deliveryStatus === 'pending' && new Date(o.deliveryDate) >= new Date())
         .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
         .slice(0, 5); // Limit to 5 upcoming orders
+    
+    const criticalStockIngredients = ingredients.filter(ing => 
+        (ing.stockQuantity || 0) <= (ing.lowStockThreshold || 0)
+    );
 
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold">Dashboard</h1>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Vendas no Mês" value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySales)} icon={DollarSign} description="Total de vendas em encomendas entregues" color="bg-card" />
                 <StatCard title="Encomendas Pendentes" value={`+${pendingOrdersCount}`} icon={ShoppingCart} description="Total de encomendas a serem produzidas/entregues" color="bg-card" />
                 <StatCard title="Total de Clientes" value={`${customers.length}`} icon={Users} description="Número de clientes cadastrados" color="bg-card"/>
+                 <StatCard 
+                    title="Estoque Crítico" 
+                    value={`${criticalStockIngredients.length} Itens`} 
+                    icon={AlertTriangle} 
+                    description="Ingredientes que precisam de reposição urgente"
+                    color={criticalStockIngredients.length > 0 ? "bg-destructive/10 border-destructive" : "bg-card"}
+                 >
+                    {criticalStockIngredients.length > 0 && (
+                        <ScrollArea className="h-20 mt-2">
+                             <ul className="text-xs space-y-1">
+                                {criticalStockIngredients.map(ing => (
+                                    <li key={ing.id} className="flex justify-between">
+                                        <span>{ing.name}</span>
+                                        <span className="font-mono">{ing.stockQuantity || 0}{ing.unit}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </ScrollArea>
+                    )}
+                 </StatCard>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 <div className="lg:col-span-2 space-y-8">

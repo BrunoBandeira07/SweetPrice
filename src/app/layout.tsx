@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Alegreya } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/app/app-sidebar';
 
-const inter = Inter({ subsets: ['latin'] });
+const alegreya = Alegreya({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Precifica Céu',
@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={alegreya.className}>
         <SidebarProvider>
           <Sidebar>
             <AppSidebar />

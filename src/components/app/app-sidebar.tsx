@@ -28,7 +28,7 @@ export default function AppSidebar() {
             <div className="bg-sidebar-primary/20 p-2 rounded-lg">
                  <Cake className="text-sidebar-primary" size={24} />
             </div>
-            <h1 className="text-xl font-semibold">Precifica Céu</h1>
+            <h1 className="text-xl font-semibold font-headline">Precifica Céu</h1>
             {isMobile && <SidebarTrigger className="ml-auto" />}
         </div>
       </SidebarHeader>
