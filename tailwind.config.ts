@@ -13,8 +13,8 @@ export default {
         sans: ['var(--font-alegreya)'],
       },
       fontSize: {
-        sm: '0.9rem',
-        base: '1rem',
+        sm: '1.0rem',
+        base: '1.1rem',
         lg: '1.125rem',
         xl: '1.25rem',
         '2xl': '1.563rem',
