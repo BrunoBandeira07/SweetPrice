@@ -11,10 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', ...fontFamily.sans],
-        serif: ['var(--font-serif)', ...fontFamily.serif],
-        body: ['var(--font-body)', ...fontFamily.sans],
-        headline: ['var(--font-headline)', ...fontFamily.serif],
+        sans: ['var(--font-alegreya)', ...fontFamily.sans],
       },
       colors: {
         background: 'hsl(var(--background))',
