@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -91,7 +92,7 @@ export default function DashboardPage() {
                     title="Estoque Crítico" 
                     value={`${criticalStockIngredients.length} Itens`} 
                     icon={AlertTriangle} 
-                    description="Ingredientes que precisam de reposição urgente"
+                    description={criticalStockIngredients.length > 0 ? "Ingredientes que precisam de reposição" : "Nenhum item com estoque baixo."}
                     color={criticalStockIngredients.length > 0 ? "bg-destructive/10 border-destructive" : "bg-card"}
                  >
                     {criticalStockIngredients.length > 0 && (
