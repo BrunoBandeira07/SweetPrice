@@ -4,8 +4,9 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/app/app-sidebar';
+import { cn } from '@/lib/utils';
 
-const alegreya = Alegreya({ subsets: ['latin'], display: 'swap' });
+const alegreya = Alegreya({ subsets: ['latin'], display: 'swap', variable: '--font-alegreya' });
 
 export const metadata: Metadata = {
   title: 'Precifica Céu',
@@ -19,13 +20,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={alegreya.className}>
+      <body className={cn('font-sans', alegreya.variable)}>
         <SidebarProvider>
           <Sidebar>
             <AppSidebar />
           </Sidebar>
           <SidebarInset>
-            <main className="p-4 md:p-8">
+            <main className="p-4 md:p:8">
               {children}
             </main>
           </SidebarInset>
