@@ -24,6 +24,19 @@ interface MonthlyRevenueChartProps {
 }
 
 export default function MonthlyRevenueChart({ orders }: MonthlyRevenueChartProps) {
+    const [recipes, setRecipes] = React.useState<Recipe[]>([]);
+
+    React.useEffect(() => {
+        try {
+            const storedRecipes = localStorage.getItem('savedRecipes');
+            if (storedRecipes) {
+                setRecipes(JSON.parse(storedRecipes));
+            }
+        } catch (error) {
+            console.error("Failed to load recipes from localStorage", error);
+        }
+    }, []);
+    
     const chartData = React.useMemo(() => {
         const data: { month: string; receita: number; custo: number; lucro: number }[] = [];
         const sixMonthsAgo = subMonths(new Date(), 5);
@@ -34,7 +47,7 @@ export default function MonthlyRevenueChart({ orders }: MonthlyRevenueChartProps
         }
         data.reverse();
 
-        const storedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]') as Recipe[];
+        const storedRecipes = recipes;
 
         orders.forEach(order => {
             const orderDate = new Date(order.deliveryDate);
@@ -57,7 +70,7 @@ export default function MonthlyRevenueChart({ orders }: MonthlyRevenueChartProps
         });
 
         return data;
-    }, [orders]);
+    }, [orders, recipes]);
 
     const chartConfig = {
         receita: {
