@@ -2,12 +2,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react';
+import { DollarSign, Package, ShoppingCart, Users, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Order, Customer } from '@/lib/types';
-import { INITIAL_ORDERS } from '@/lib/constants';
+import { Order, Customer, Ingredient } from '@/lib/types';
+import { INITIAL_INGREDIENTS, INITIAL_ORDERS } from '@/lib/constants';
 import UpcomingEvents from '@/components/app/upcoming-events';
 
 const StatCard = ({ title, value, icon: Icon, description }: { title: string, value: string, icon: React.ElementType, description: string }) => (
@@ -26,6 +26,7 @@ const StatCard = ({ title, value, icon: Icon, description }: { title: string, va
 export default function DashboardPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     
     useEffect(() => {
         try {
@@ -49,6 +50,17 @@ export default function DashboardPage() {
             console.error("Failed to load customers from localStorage", error);
         }
 
+         try {
+            const storedIngredients = localStorage.getItem('ingredients');
+            if (storedIngredients) {
+                setIngredients(JSON.parse(storedIngredients));
+            } else {
+                setIngredients(INITIAL_INGREDIENTS);
+            }
+        } catch (error) {
+            console.error("Failed to load ingredients from localStorage", error);
+        }
+
     }, []);
 
 
@@ -62,15 +74,18 @@ export default function DashboardPage() {
         .filter(o => o.deliveryStatus === 'pending' && new Date(o.deliveryDate) >= new Date())
         .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
         .slice(0, 5); // Limit to 5 upcoming orders
+
+    const criticalStockCount = ingredients.filter(i => (i.stockQuantity ?? 0) <= (i.lowStockThreshold ?? 0)).length;
     
 
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold">Dashboard</h1>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Vendas no Mês" value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySales)} icon={DollarSign} description="Total de vendas em encomendas entregues" />
                 <StatCard title="Encomendas Pendentes" value={`+${pendingOrdersCount}`} icon={ShoppingCart} description="Total de encomendas a serem produzidas/entregues" />
                 <StatCard title="Total de Clientes" value={`${customers.length}`} icon={Users} description="Número de clientes cadastrados" />
+                <StatCard title="Estoque Crítico" value={`${criticalStockCount}`} icon={AlertTriangle} description="Itens com estoque baixo ou zerado" />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                 <div className="lg:col-span-2 space-y-8">
