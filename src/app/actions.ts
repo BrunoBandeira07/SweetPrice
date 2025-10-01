@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -14,6 +15,11 @@ import {
   type SuggestCampaignTasksInput,
   type SuggestCampaignTasksOutput,
 } from '@/ai/flows/suggest-campaign-tasks';
+import {
+    suggestDashboardInsight,
+    type SuggestDashboardInsightInput,
+    type SuggestDashboardInsightOutput,
+} from '@/ai/flows/suggest-dashboard-insight';
 
 
 import { Ingredient, Unit } from '@/lib/types';
@@ -209,4 +215,21 @@ export async function getCampaignSuggestions(campaignName: string): Promise<Camp
     const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
     return { success: false, error: `Falha ao gerar sugestões: ${errorMessage}` };
   }
+}
+
+interface DashboardSuggestionResult {
+    success: boolean;
+    suggestion?: string;
+    error?: string;
+}
+
+export async function getDashboardSuggestion(input: SuggestDashboardInsightInput): Promise<DashboardSuggestionResult> {
+    try {
+        const result = await suggestDashboardInsight(input);
+        return { success: true, suggestion: result.suggestion };
+    } catch (error) {
+        console.error("Erro ao gerar sugestão para o dashboard:", error);
+        const errorMessage = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
+        return { success: false, error: `Falha ao gerar sugestão: ${errorMessage}` };
+    }
 }

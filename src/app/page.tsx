@@ -6,10 +6,14 @@ import { DollarSign, Package, ShoppingCart, Users, AlertTriangle } from 'lucide-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Order, Customer, Ingredient } from '@/lib/types';
+import { Order, Customer, Ingredient, RecipeItem } from '@/lib/types';
 import { INITIAL_INGREDIENTS, INITIAL_ORDERS } from '@/lib/constants';
 import UpcomingEvents from '@/components/app/upcoming-events';
 import { cn } from '@/lib/utils';
+import AiSuggestionCard from '@/components/app/ai-suggestion-card';
+import MonthlyGoalCard from '@/components/app/monthly-goal-card';
+import TopProductsCard from '@/components/app/top-products-card';
+
 
 const StatCard = ({ title, value, icon: Icon, description, className }: { title: string, value: string, icon: React.ElementType, description: string, className?: string }) => (
     <Card className={className}>
@@ -95,8 +99,9 @@ export default function DashboardPage() {
                 />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                <div className="lg:col-span-2 space-y-8">
-                     <Card>
+                 <div className="lg:col-span-2 grid grid-cols-1 gap-8">
+                    <AiSuggestionCard criticalStockCount={criticalStockCount} monthlySales={monthlySales} />
+                    <Card>
                         <CardHeader>
                             <CardTitle>Próximas Encomendas</CardTitle>
                         </CardHeader>
@@ -133,7 +138,9 @@ export default function DashboardPage() {
                         </CardContent>
                     </Card>
                 </div>
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 space-y-8">
+                    <MonthlyGoalCard currentSales={monthlySales} />
+                    <TopProductsCard orders={orders} />
                     <UpcomingEvents orders={orders} />
                 </div>
             </div>
