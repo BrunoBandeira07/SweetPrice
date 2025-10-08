@@ -40,7 +40,10 @@ type Equipments = Record<string, Equipment>;
 export const useCosts = () => {
     const { user } = useUser();
     const firestore = useFirestore();
-    const costsDocRef = useMemoFirebase(() => user ? doc(firestore, 'costs', user.uid) : null, [firestore, user]);
+    const costsDocRef = useMemoFirebase(() => {
+      if (!user || !firestore) return null;
+      return doc(firestore, 'costs', user.uid)
+    }, [firestore, user]);
     const { data: costs = {} as CostsFormValues } = useDoc<CostsFormValues>(costsDocRef);
 
     const electricEquipments: Equipments = useMemo(() => ({
@@ -60,5 +63,3 @@ export const useCosts = () => {
 
     return { costs, electricEquipments, gasEquipments };
 }
-
-    

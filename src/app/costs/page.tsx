@@ -71,7 +71,10 @@ export default function CostsPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const costsDocRef = useMemoFirebase(() => user ? doc(firestore, 'costs', user.uid) : null, [firestore, user]);
+  const costsDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'costs', user.uid);
+  }, [firestore, user]);
   const { data: savedCosts, isLoading } = useDoc<CostsFormValues>(costsDocRef);
   
   const form = useForm<CostsFormValues>({
@@ -240,5 +243,3 @@ export default function CostsPage() {
     </div>
   );
 }
-
-    
