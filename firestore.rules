@@ -1,92 +1,100 @@
-/**
- * @file Firestore Security Rules
- * @core_philosophy This ruleset implements a public read, owner-write security model.
- *   All data is readable by any user, but only authenticated users can create, update, or delete data, and only if they are the owner.
- * @data_structure Top-level collections for ingredients, recipes, customers, and orders.
- * @key_security_decisions Customers should not be listable by unauthenticated users.
- * @denormalization None
- * @structural_segregation None
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Allows anyone to read ingredients, but only authenticated users can create, update, or delete them if they are the owner.
-     * @path /ingredients/{ingredientId}
-     * @allow (get, list): Any user can read ingredient data.
-     * @allow (create): An authenticated user can create an ingredient.
-     * @allow (update, delete): Only the owner of the ingredient can update or delete it.
-     * @deny create: An unauthenticated user cannot create an ingredient.
-     * @deny update: An unauthenticated user cannot update an ingredient.
-     * @deny delete: An unauthenticated user cannot delete an ingredient.
-     * @principle Enforces public read, owner-only write access for ingredients.
-     */
-    match /ingredients/{ingredientId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Allows anyone to read recipes, but only authenticated users can create, update, or delete them if they are the owner.
-     * @path /recipes/{recipeId}
-     * @allow (get, list): Any user can read recipe data.
-     * @allow (create): An authenticated user can create a recipe.
-     * @allow (update, delete): Only the owner of the recipe can update or delete it.
-     * @deny create: An unauthenticated user cannot create a recipe.
-     * @deny update: An unauthenticated user cannot update a recipe.
-     * @deny delete: An unauthenticated user cannot delete a recipe.
-     * @principle Enforces public read, owner-only write access for recipes.
-     */
-    match /recipes/{recipeId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Allows anyone to read customer data, but only authenticated users can create, update, or delete customers. Listing is not available to unauthenticated users.
-     * @path /customers/{customerId}
-     * @allow (get): Any user can read customer data.
-     * @allow (create): An authenticated user can create customer data.
-     * @allow (update, delete): Only authenticated users can update or delete customer data, existence of document is checked.
-     * @allow (list): Not permitted for unauthenticated users.
-     * @deny create: An unauthenticated user cannot create customer data.
-     * @deny update: An unauthenticated user cannot update customer data.
-     * @deny delete: An unauthenticated user cannot delete customer data.
-     * @principle Enforces public read, owner-only write access for customers.
-     */
-    match /customers/{customerId} {
-      allow get: if true;
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Allows anyone to read order data, but only authenticated users can create, update, or delete orders.
-     * @path /orders/{orderId}
-     * @allow (get, list): Any user can read order data.
-     * @allow (create): An authenticated user can create an order.
-     * @allow (update, delete): Only the owner of the order can update or delete it, ensuring the document exists.
-     * @deny create: An unauthenticated user cannot create an order.
-     * @deny update: An unauthenticated user cannot update an order.
-     * @deny delete: An unauthenticated user cannot delete an order.
-     * @principle Enforces public read, owner-only write access for orders.
-     */
-    match /orders/{orderId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
+    // Helper function to check if the user is signed in.
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    // Helper function to check if the authenticated user is the owner of the document.
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if the authenticated user is the existing owner of the document.
+    function isExistingOwner() {
+        return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    /**
+     * @description Grants access to a user's ingredient data.
+     * @path /databases/{database}/documents/users/{userId}/ingredients/{ingredientId}
+     * @allow (create) - Authenticated user creates their own ingredient with correct userId in path.
+     * @allow (get, list, update, delete) - Authenticated user reads, lists, updates, and deletes their own ingredient.
+     * @deny (create) - Attempt to create an ingredient for another user.
+     * @deny (get, list, update, delete) - Attempt to access another user's ingredient.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/ingredients/{ingredientId} {
+      // Read Permissions
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write Permissions
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Grants access to a user's recipe data.
+     * @path /databases/{database}/documents/users/{userId}/recipes/{recipeId}
+     * @allow (create) - Authenticated user creates their own recipe with correct userId in path.
+     * @allow (get, list, update, delete) - Authenticated user reads, lists, updates, and deletes their own recipe.
+     * @deny (create) - Attempt to create a recipe for another user.
+     * @deny (get, list, update, delete) - Attempt to access another user's recipe.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/recipes/{recipeId} {
+      // Read Permissions
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write Permissions
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Grants access to a user's customer data.
+     * @path /databases/{database}/documents/users/{userId}/customers/{customerId}
+     * @allow (create) - Authenticated user creates their own customer with correct userId in path.
+     * @allow (get, list, update, delete) - Authenticated user reads, lists, updates, and deletes their own customer.
+     * @deny (create) - Attempt to create a customer for another user.
+     * @deny (get, list, update, delete) - Attempt to access another user's customer.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/customers/{customerId} {
+      // Read Permissions
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write Permissions
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
+    }
+
+    /**
+     * @description Grants access to a user's order data.
+     * @path /databases/{database}/documents/users/{userId}/orders/{orderId}
+     * @allow (create) - Authenticated user creates their own order with correct userId in path.
+     * @allow (get, list, update, delete) - Authenticated user reads, lists, updates, and deletes their own order.
+     * @deny (create) - Attempt to create an order for another user.
+     * @deny (get, list, update, delete) - Attempt to access another user's order.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/orders/{orderId} {
+      // Read Permissions
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      // Write Permissions
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner();
+      allow delete: if isExistingOwner();
     }
   }
 }
