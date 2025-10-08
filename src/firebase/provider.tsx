@@ -1,6 +1,6 @@
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useReducer } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
@@ -61,29 +61,32 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [userAuthState, setUserAuthState] = useState<UserAuthState>({
-    user: null,
-    isUserLoading: true, // Start loading until first auth event
-    userError: null,
-  });
+  const [isUserLoading, setIsUserLoading] = useState(true);
+  const [userError, setUserError] = useState<Error | null>(null);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
-    if (!auth) { // If no Auth service instance, cannot determine user state
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
+    if (!auth) {
+      setIsUserLoading(false);
+      setUserError(new Error("Auth service not provided."));
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
+    setIsUserLoading(true);
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        setIsUserLoading(false);
+        setUserError(null);
+        forceUpdate(); // Force a re-render to ensure currentUser is fresh
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
-        setUserAuthState({ user: null, isUserLoading: false, userError: error });
+        setIsUserLoading(false);
+        setUserError(error);
+        forceUpdate(); // Force a re-render
       }
     );
     return () => unsubscribe(); // Cleanup
@@ -97,11 +100,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       firebaseApp: servicesAvailable ? firebaseApp : null,
       firestore: servicesAvailable ? firestore : null,
       auth: servicesAvailable ? auth : null,
-      user: userAuthState.user,
-      isUserLoading: userAuthState.isUserLoading,
-      userError: userAuthState.userError,
+      user: auth?.currentUser ?? null,
+      isUserLoading: isUserLoading,
+      userError: userError,
     };
-  }, [firebaseApp, firestore, auth, userAuthState]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseApp, firestore, auth, isUserLoading, userError, auth?.currentUser]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -175,11 +179,7 @@ export const useUser = (): UserHookResult => {
     if (context === undefined) {
     throw new Error('useUser must be used within a FirebaseProvider.');
   }
-  const { isUserLoading, userError, auth } = context;
-
-  // If loading is finished, auth.currentUser will be the most up-to-date value.
-  // This avoids race conditions where the `user` state from the provider is not yet updated.
-  const user = !isUserLoading ? auth?.currentUser : null;
+  const { user, isUserLoading, userError } = context;
   
   return { user, isUserLoading, userError };
 };
