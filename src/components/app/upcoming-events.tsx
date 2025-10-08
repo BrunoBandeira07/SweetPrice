@@ -18,7 +18,7 @@ export default function UpcomingEvents({ orders, isLoading }: UpcomingEventsProp
     const { toast } = useToast();
 
     const deliveryDays = useMemo(() => {
-        if (!orders) return [];
+        if (!orders) return []; // GUARANTEE that orders is available before processing
         return (orders || [])
             .filter(o => o.deliveryStatus === 'pending')
             .map(o => new Date(o.deliveryDate));
