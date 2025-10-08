@@ -1,13 +1,12 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import QuoteBuilder from '@/components/app/quote-builder';
 import QuotePreview from '@/components/app/quote-preview';
 import type { Customer, Recipe } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection } from 'firebase/firestore';
 
 export interface QuoteItem {
@@ -28,10 +27,13 @@ export interface Quote {
 
 
 export default function QuotesPage() {
-    const [customers, setCustomers] = useState<Customer[]>([]);
-    
     const firestore = useFirestore();
-    const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+    const { user } = useUser();
+
+    const customersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'customers') : null, [firestore, user]);
+    const { data: customers = [] } = useCollection<Customer>(customersCollection);
+
+    const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
     const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
 
     const [quote, setQuote] = useState<Quote>({
@@ -41,23 +43,6 @@ export default function QuotesPage() {
         validityInDays: 7,
         total: 0,
     });
-    const { toast } = useToast();
-
-    useEffect(() => {
-        try {
-            const storedCustomers = localStorage.getItem('customers');
-            if (storedCustomers) {
-                setCustomers(JSON.parse(storedCustomers));
-            }
-        } catch (error) {
-            console.error("Failed to load data from localStorage", error);
-            toast({
-                variant: 'destructive',
-                title: 'Erro ao carregar dados',
-                description: 'Não foi possível carregar clientes.'
-            })
-        }
-    }, [toast]);
 
     const updateQuote = (newQuoteData: Partial<Quote>) => {
         const updatedQuote = { ...quote, ...newQuoteData };

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { format, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection, doc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -95,14 +95,16 @@ const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (o
 export default function OrdersPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { user } = useUser();
     
-    const ordersCollection = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+    const ordersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'orders') : null, [firestore, user]);
     const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
     
-    const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+    const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
     const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
 
     const handleProductionStatusChange = (orderId: string, newStatus: ProductionStatus) => {
+        if (!ordersCollection) return;
         const orderToUpdate = orders.find(o => o.id === orderId);
         if (orderToUpdate) {
             const docRef = doc(ordersCollection, orderId);
@@ -115,6 +117,7 @@ export default function OrdersPage() {
     }
 
      const handleAddOrder = (newOrderData: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => {
+        if (!ordersCollection) return;
         const docRef = doc(ordersCollection);
         const orderWithId: Order = { 
             ...newOrderData, 

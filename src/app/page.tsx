@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import { DollarSign, Package, ShoppingCart, Users, AlertTriangle } from 'lucide-react';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 
@@ -34,14 +34,15 @@ const StatCard = ({ title, value, icon: Icon, description, className, isLoading 
 
 export default function DashboardPage() {
     const firestore = useFirestore();
+    const { user } = useUser();
     
-    const ordersCollection = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+    const ordersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'orders') : null, [firestore, user]);
     const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
 
-    const customersCollection = useMemoFirebase(() => collection(firestore, 'customers'), [firestore]);
+    const customersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'customers') : null, [firestore, user]);
     const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersCollection);
 
-    const ingredientsCollection = useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]);
+    const ingredientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'ingredients') : null, [firestore, user]);
     const { data: ingredients, isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
 
     const monthlySales = useMemo(() => {

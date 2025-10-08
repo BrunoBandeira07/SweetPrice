@@ -2,7 +2,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { DollarSign, Package, TrendingUp } from 'lucide-react';
@@ -26,10 +26,12 @@ const StatCard = ({ title, value, icon: Icon, isLoading }: { title: string, valu
 
 export default function ReportsPage() {
     const firestore = useFirestore();
-    const ordersCollection = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+    const { user } = useUser();
+
+    const ordersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'orders') : null, [firestore, user]);
     const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
     
-    const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+    const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
     const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
 
     const deliveredOrders = useMemo(() => (orders || []).filter(o => o.deliveryStatus === 'delivered'), [orders]);

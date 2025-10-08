@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import { Users, Lightbulb, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection, doc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -22,11 +22,13 @@ export default function CustomerList({ customers, onDeleteCustomer }: CustomerLi
     const { toast } = useToast();
     const [loadingSuggestion, setLoadingSuggestion] = useState<string | null>(null);
     const firestore = useFirestore();
+    const { user } = useUser();
 
-    const ordersCollection = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+    const ordersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'orders') : null, [firestore, user]);
     const { data: allOrders = [] } = useCollection<Order>(ordersCollection);
 
     const handleGenerateSuggestion = async (customer: Customer) => {
+        if (!user) return;
         setLoadingSuggestion(customer.id);
         
         const customerOrders = allOrders.filter(o => o.customerName === customer.name);
@@ -34,7 +36,7 @@ export default function CustomerList({ customers, onDeleteCustomer }: CustomerLi
         const result = await getCrmSuggestion({ customer, orders: customerOrders });
 
         if (result.success && result.suggestion) {
-            const customerDocRef = doc(firestore, 'customers', customer.id);
+            const customerDocRef = doc(firestore, 'users', user.uid, 'customers', customer.id);
             setDocumentNonBlocking(customerDocRef, { ...customer, crmSuggestion: result.suggestion }, { merge: true });
         } else {
             toast({

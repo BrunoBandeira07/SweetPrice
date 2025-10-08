@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { Ingredient, Recipe, RecipeItem } from "@/lib/types";
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useCollection } from "@/firebase/firestore/use-collection";
-import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection, doc } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
@@ -18,11 +18,13 @@ import ImportSheetDialog from "@/components/app/import-sheet-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CalculatorPage() {
+  const { user } = useUser();
   const firestore = useFirestore();
-  const ingredientsCollection = useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]);
+
+  const ingredientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'ingredients') : null, [firestore, user]);
   const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
   
-  const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+  const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
   const { data: savedRecipes = [] } = useCollection<Recipe>(recipesCollection);
 
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
@@ -54,6 +56,7 @@ export default function CalculatorPage() {
   }, [searchParams, savedRecipes, toast]);
 
   const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => {
+    if (!ingredientsCollection) return;
     const docRef = ingredient.id ? doc(ingredientsCollection, ingredient.id) : doc(ingredientsCollection);
     const dataToSave: Ingredient = {
       ...ingredient,
@@ -64,6 +67,7 @@ export default function CalculatorPage() {
   };
 
   const deleteIngredient = (id: string) => {
+    if (!ingredientsCollection) return;
     const docRef = doc(ingredientsCollection, id);
     deleteDocumentNonBlocking(docRef);
     setRecipeItems((prev) => prev.filter((ri) => ri.type === 'ingredient' && ri.ingredient?.id !== id));
@@ -78,6 +82,7 @@ export default function CalculatorPage() {
   };
 
   const handleIngredientsImported = (importedIngredients: Omit<Ingredient, 'id'>[]) => {
+    if (!ingredientsCollection) return;
     importedIngredients.forEach(ing => {
       const docRef = doc(ingredientsCollection);
       const dataToSave: Ingredient = {
@@ -94,6 +99,7 @@ export default function CalculatorPage() {
   };
 
   const handleSaveRecipe = (recipe: Omit<Recipe, 'id'> & { id?: string }) => {
+    if (!recipesCollection) return;
     const docRef = recipe.id ? doc(recipesCollection, recipe.id) : doc(recipesCollection);
     const dataToSave: Recipe = {
       ...recipe,

@@ -21,7 +21,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection, doc } from 'firebase/firestore';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,11 +30,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function RecipesPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
-    const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+    const { user } = useUser();
+
+    const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
     const { data: recipes = [], isLoading: isLoadingRecipes } = useCollection<Recipe>(recipesCollection);
 
     const handleDeleteRecipe = (recipeId: string) => {
-        const docRef = doc(firestore, 'recipes', recipeId);
+        if (!recipesCollection) return;
+        const docRef = doc(recipesCollection, recipeId);
         deleteDocumentNonBlocking(docRef);
         toast({
             title: 'Receita Excluída!',

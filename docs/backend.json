@@ -36,7 +36,7 @@
         "totalCost": { "type": "number" },
         "suggestedPrice": { "type": "number" }
       },
-      "required": ["id", "name", "items", "totalCost", "suggestedPrice"]
+      "required": ["id", "name", "items"]
     },
     "RecipeItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -103,40 +103,25 @@
   },
   "auth": {
     "providers": [
-      "password",
       "anonymous"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/ingredients/{ingredientId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/Ingredient" },
-          "description": "Stores all ingredient data."
-        }
-      },
-      {
-        "path": "/recipes/{recipeId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/Recipe" },
-          "description": "Stores all recipe data."
-        }
-      },
-      {
-        "path": "/customers/{customerId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/Customer" },
-          "description": "Stores all customer data."
-        }
-      },
-      {
-        "path": "/orders/{orderId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/Order" },
-          "description": "Stores all order data."
-        }
-      }
-    ]
+    "/users/{userId}/ingredients/{ingredientId}": {
+      "schema": { "$ref": "#/entities/Ingredient" },
+      "description": "Stores all ingredient data for a specific user."
+    },
+    "/users/{userId}/recipes/{recipeId}": {
+      "schema": { "$ref": "#/entities/Recipe" },
+      "description": "Stores all recipe data for a specific user."
+    },
+    "/users/{userId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Stores all customer data for a specific user."
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores all order data for a specific user."
+    }
   }
 }

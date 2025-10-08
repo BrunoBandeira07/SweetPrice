@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus } from 'lucide-react';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { collection, doc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -37,8 +37,9 @@ export default function CustomersPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { user } = useUser();
     
-    const customersCollection = useMemoFirebase(() => collection(firestore, 'customers'), [firestore]);
+    const customersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'customers') : null, [firestore, user]);
     const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersCollection);
 
     const form = useForm<CustomerFormValues>({
@@ -53,6 +54,7 @@ export default function CustomersPage() {
     });
 
     const handleAddCustomer = (data: CustomerFormValues) => {
+        if (!customersCollection) return;
         const docRef = doc(customersCollection);
         const newCustomer: Customer = {
             id: docRef.id,
@@ -68,6 +70,7 @@ export default function CustomersPage() {
     }
     
     const handleDeleteCustomer = (customerId: string) => {
+        if (!customersCollection) return;
         const docRef = doc(customersCollection, customerId);
         deleteDocumentNonBlocking(docRef);
         toast({
