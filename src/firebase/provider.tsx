@@ -170,7 +170,16 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
  * This provides the User object, loading status, and any auth errors.
  * @returns {UserHookResult} Object with user, isUserLoading, userError.
  */
-export const useUser = (): UserHookResult => { // Renamed from useAuthUser
-  const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
+export const useUser = (): UserHookResult => {
+  const context = useContext(FirebaseContext);
+    if (context === undefined) {
+    throw new Error('useUser must be used within a FirebaseProvider.');
+  }
+  const { isUserLoading, userError, auth } = context;
+
+  // If loading is finished, auth.currentUser will be the most up-to-date value.
+  // This avoids race conditions where the `user` state from the provider is not yet updated.
+  const user = !isUserLoading ? auth?.currentUser : null;
+  
   return { user, isUserLoading, userError };
 };
