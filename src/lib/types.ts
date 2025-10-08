@@ -1,8 +1,10 @@
+
 export type Unit = 'g' | 'kg' | 'ml' | 'l' | 'un';
 export type OperationalUnit = 'min' | 'h' | 'un';
 
 export interface Ingredient {
   id: string;
+  userId: string;
   name: string;
   cost: number;
   packageSize: number;
@@ -34,6 +36,7 @@ export interface RecipeItem {
 
 export interface Recipe {
     id: string;
+    userId: string;
     name:string;
     items: RecipeItem[];
     totalCost?: number;
@@ -46,6 +49,7 @@ export type ProductionStatus = 'to_do' | 'buying_supplies' | 'producing' | 'fini
 
 export interface Order {
   id: string;
+  userId: string;
   customerName: string;
   deliveryDate: string; // ISO string date
   items: {
@@ -59,6 +63,7 @@ export interface Order {
 
 export interface Customer {
   id: string;
+  userId: string;
   name: string;
   cpf?: string;
   address?: string;
@@ -78,6 +83,7 @@ export interface CampaignTask {
 
 export interface Campaign {
     id: string;
+    userId: string;
     name: string;
     status: CampaignStatus;
     startDate: string; // ISO String
@@ -86,7 +92,14 @@ export interface Campaign {
 }
 
 export interface UserSettings {
+    id: string;
+    userId: string;
     monthlyGoal?: number;
+}
+
+export interface UserCosts {
+    id: string;
+    userId: string;
     // Costs
     kwhPrice?: number;
     gasCylinderSize?: '8' | '10' | '13';
@@ -106,3 +119,5 @@ export interface UserSettings {
     gasOvenFlow?: number;
     customExpenses?: { name: string; value: number; unit: string }[];
 }
+
+    

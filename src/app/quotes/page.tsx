@@ -8,7 +8,7 @@ import QuotePreview from '@/components/app/quote-preview';
 import type { Customer, Recipe } from '@/lib/types';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 export interface QuoteItem {
     id: string;
@@ -31,17 +31,17 @@ export default function QuotesPage() {
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const customersCollection = useMemoFirebase(() => {
+    const customersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'customers');
+        return query(collection(firestore, 'customers'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: customers = [] } = useCollection<Customer>(customersCollection);
+    const { data: customers = [] } = useCollection<Customer>(customersQuery);
 
-    const recipesCollection = useMemoFirebase(() => {
+    const recipesQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'recipes');
+        return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
+    const { data: recipes = [] } = useCollection<Recipe>(recipesQuery);
 
     const [quote, setQuote] = useState<Quote>({
         customer: {},
@@ -77,3 +77,5 @@ export default function QuotesPage() {
         </div>
     );
 }
+
+    

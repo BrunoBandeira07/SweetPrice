@@ -26,7 +26,7 @@ import { getCampaignSuggestions } from '@/app/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '../ui/skeleton';
@@ -53,7 +53,7 @@ const STATUS_MAP: Record<CampaignStatus, { label: string; className: string; ico
 };
 
 
-const CampaignForm = ({ onSave, campaign }: { onSave: (data: Omit<Campaign, 'id'> & { id?: string }) => void; campaign?: Campaign }) => {
+const CampaignForm = ({ onSave, campaign }: { onSave: (data: Omit<Campaign, 'id' | 'userId'> & { id?: string }) => void; campaign?: Campaign }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isSuggesting, setIsSuggesting] = useState(false);
     const { toast } = useToast();
@@ -108,7 +108,7 @@ const CampaignForm = ({ onSave, campaign }: { onSave: (data: Omit<Campaign, 'id'
 
 
     const onSubmit = (data: CampaignFormValues) => {
-        const campaignData: Omit<Campaign, 'id'> & { id?: string } = {
+        const campaignData: Omit<Campaign, 'id' | 'userId'> & { id?: string } = {
             id: campaign?.id,
             name: data.name,
             startDate: data.dateRange.from.toISOString(),
@@ -369,20 +369,22 @@ export default function PlannerPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const campaignsCollection = useMemoFirebase(() => {
+    const campaignsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'campaigns');
+        return query(collection(firestore, 'campaigns'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: campaigns = [], isLoading: isLoadingCampaigns } = useCollection<Campaign>(campaignsCollection);
+    const { data: campaigns = [], isLoading: isLoadingCampaigns } = useCollection<Campaign>(campaignsQuery);
 
-    const handleSaveCampaign = (campaignData: Omit<Campaign, 'id'> & { id?: string }) => {
-        if (!campaignsCollection) return;
+    const handleSaveCampaign = (campaignData: Omit<Campaign, 'id' | 'userId'> & { id?: string }) => {
+        if (!user || !firestore) return;
+        const campaignsCollection = collection(firestore, 'campaigns');
         const isEditing = !!campaignData.id;
         const docRef = campaignData.id ? doc(campaignsCollection, campaignData.id) : doc(campaignsCollection);
 
         const dataToSave: Campaign = {
             ...campaignData,
             id: docRef.id,
+            userId: user.uid,
         };
 
         setDocumentNonBlocking(docRef, dataToSave, { merge: true });
@@ -394,8 +396,8 @@ export default function PlannerPage() {
     };
     
     const handleDeleteCampaign = (id: string) => {
-        if (!campaignsCollection) return;
-        const docRef = doc(campaignsCollection, id);
+        if (!firestore) return;
+        const docRef = doc(firestore, 'campaigns', id);
         deleteDocumentNonBlocking(docRef);
         toast({
             title: 'Campanha Excluída!',
@@ -453,3 +455,5 @@ export default function PlannerPage() {
         </div>
     );
 }
+
+    

@@ -10,6 +10,10 @@
           "type": "string",
           "description": "Unique identifier for the ingredient."
         },
+        "userId": {
+            "type": "string",
+            "description": "The ID of the user who owns this ingredient."
+        },
         "name": {
           "type": "string",
           "description": "Name of the ingredient."
@@ -29,6 +33,7 @@
       },
       "required": [
         "id",
+        "userId",
         "name",
         "cost",
         "unit",
@@ -44,6 +49,10 @@
         "id": {
           "type": "string",
           "description": "Unique identifier for the recipe."
+        },
+        "userId": {
+            "type": "string",
+            "description": "The ID of the user who owns this recipe."
         },
         "name": {
           "type": "string",
@@ -67,62 +76,166 @@
       },
       "required": [
         "id",
+        "userId",
         "name",
         "ingredientIds",
         "profitMargin",
         "sellingPrice"
       ]
+    },
+    "Customer": {
+        "title": "Customer",
+        "type": "object",
+        "description": "Represents a customer.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "name": { "type": "string" },
+            "cpf": { "type": "string" },
+            "address": { "type": "string" },
+            "phone": { "type": "string" },
+            "instagram": { "type": "string" },
+            "lastOrderDate": { "type": "string", "format": "date-time" },
+            "crmSuggestion": { "type": "string" }
+        },
+        "required": ["id", "userId", "name"]
+    },
+    "Order": {
+        "title": "Order",
+        "type": "object",
+        "description": "Represents a customer order.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "customerName": { "type": "string" },
+            "deliveryDate": { "type": "string", "format": "date-time" },
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "recipe": { "$ref": "#/entities/Recipe" },
+                        "quantity": { "type": "number" }
+                    },
+                    "required": ["recipe", "quantity"]
+                }
+            },
+            "total": { "type": "number" },
+            "deliveryStatus": { "type": "string", "enum": ["pending", "delivered", "cancelled"] },
+            "productionStatus": { "type": "string", "enum": ["to_do", "buying_supplies", "producing", "finishing", "ready_for_delivery"] }
+        },
+        "required": ["id", "userId", "customerName", "deliveryDate", "items", "total", "deliveryStatus", "productionStatus"]
+    },
+    "Campaign": {
+        "title": "Campaign",
+        "type": "object",
+        "description": "Represents a marketing campaign.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "name": { "type": "string" },
+            "status": { "type": "string", "enum": ["planning", "in_progress", "completed", "archived"] },
+            "startDate": { "type": "string", "format": "date-time" },
+            "endDate": { "type": "string", "format": "date-time" },
+            "tasks": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string" },
+                        "text": { "type": "string" },
+                        "completed": { "type": "boolean" }
+                    },
+                    "required": ["id", "text", "completed"]
+                }
+            }
+        },
+        "required": ["id", "userId", "name", "status", "startDate", "endDate", "tasks"]
+    },
+    "Settings": {
+        "title": "Settings",
+        "type": "object",
+        "description": "User-specific application settings.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "monthlyGoal": { "type": "number" }
+        },
+        "required": ["id", "userId"]
+    },
+    "Costs": {
+        "title": "Costs",
+        "type": "object",
+        "description": "User-specific cost settings.",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "kwhPrice": { "type": "number" },
+            "gasCylinderSize": { "type": "string", "enum": ["8", "10", "13"] },
+            "gasCylinderPrice": { "type": "number" },
+            "proLabore": { "type": "number" },
+            "creditCardFee": { "type": "number" },
+            "indirectCostsRate": { "type": "number" },
+            "taxRate": { "type": "number" },
+            "microwavePower": { "type": "number" },
+            "blenderPower": { "type": "number" },
+            "mixerPower": { "type": "number" },
+            "electricOvenPower": { "type": "number" },
+            "brigadeiroPanPower": { "type": "number" },
+            "fryerPower": { "type": "number" },
+            "gasFryerFlow": { "type": "number" },
+            "stoveBurnerFlow": { "type": "number" },
+            "gasOvenFlow": { "type": "number" },
+            "customExpenses": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string" },
+                        "value": { "type": "number" },
+                        "unit": { "type": "string" }
+                    },
+                    "required": ["name", "value", "unit"]
+                }
+            }
+        },
+        "required": ["id", "userId"]
     }
   },
   "auth": {
     "providers": [
-      "password",
       "anonymous"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}/ingredients/{ingredientId}",
-        "definition": {
-          "entityName": "Ingredient",
-          "schema": {
-            "$ref": "#/backend/entities/Ingredient"
-          },
-          "description": "Stores ingredient data for a specific user. Only the user can access ingredients under their path. Path-based ownership: `/users/{userId}`.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user who owns the ingredient."
-            },
-            {
-              "name": "ingredientId",
-              "description": "The ID of the ingredient."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/recipes/{recipeId}",
-        "definition": {
-          "entityName": "Recipe",
-          "schema": {
-            "$ref": "#/backend/entities/Recipe"
-          },
-          "description": "Stores recipe data for a specific user. Only the user can access recipes under their path. Path-based ownership: `/users/{userId}`.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user who owns the recipe."
-            },
-            {
-              "name": "recipeId",
-              "description": "The ID of the recipe."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to manage ingredients and recipes for the SweetPrice application. Each user has their own set of ingredients and recipes, ensuring data isolation and simplified security rules based on path-based ownership. This approach eliminates the need for complex authorization logic or database lookups in security rules.\n\nThe `/users/{userId}/ingredients/{ingredientId}` and `/users/{userId}/recipes/{recipeId}` paths enforce that only the authenticated user (`request.auth.uid`) can access their respective ingredients and recipes. This achieves Authorization Independence (CRITICAL) as all authorization is based on the user ID present in the path, and no `get()` calls are needed in security rules.\n\nThe structure supports the required QAPs by isolating data per user, enabling secure `list` operations within each user's scope. The segregation of data per user (`/users/{userId}`) ensures that listing operations will only return the data owned by that user, preventing unauthorized access to other users' data. The structure is simple and scalable and follows the principle of path-based ownership."
+    "/ingredients/{ingredientId}": {
+        "schema": { "$ref": "#/entities/Ingredient" },
+        "description": "Stores all ingredients for all users."
+    },
+    "/recipes/{recipeId}": {
+        "schema": { "$ref": "#/entities/Recipe" },
+        "description": "Stores all recipes for all users."
+    },
+    "/customers/{customerId}": {
+        "schema": { "$ref": "#/entities/Customer" },
+        "description": "Stores all customers for all users."
+    },
+    "/orders/{orderId}": {
+        "schema": { "$ref": "#/entities/Order" },
+        "description": "Stores all orders for all users."
+    },
+    "/campaigns/{campaignId}": {
+        "schema": { "$ref": "#/entities/Campaign" },
+        "description": "Stores all campaigns for all users."
+    },
+    "/settings/{userId}": {
+        "schema": { "$ref": "#/entities/Settings" },
+        "description": "Stores general settings for each user. Document ID is the user ID."
+    },
+    "/costs/{userId}": {
+        "schema": { "$ref": "#/entities/Costs" },
+        "description": "Stores cost settings for each user. Document ID is the user ID."
+    }
   }
 }
+    

@@ -4,8 +4,9 @@
 import { useMemo } from 'react';
 import { DollarSign, Package, ShoppingCart, Users, AlertTriangle } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection } from 'firebase/firestore';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,7 +17,7 @@ import { cn } from '@/lib/utils';
 import AiSuggestionCard from '@/components/app/ai-suggestion-card';
 import MonthlyGoalCard from '@/components/app/monthly-goal-card';
 import TopProductsCard from '@/components/app/top-products-card';
-import { Order, Customer, Ingredient } from '@/lib/types';
+import { Order, Customer, Ingredient, UserSettings } from '@/lib/types';
 
 
 const StatCard = ({ title, value, icon: Icon, description, className, isLoading }: { title: string, value: string, icon: React.ElementType, description: string, className?: string, isLoading?: boolean }) => (
@@ -36,23 +37,26 @@ export default function DashboardPage() {
     const firestore = useFirestore();
     const { user } = useUser();
     
-    const ordersCollection = useMemoFirebase(() => {
+    const ordersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'orders');
+        return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
+    const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
 
-    const customersCollection = useMemoFirebase(() => {
+    const customersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'customers');
+        return query(collection(firestore, 'customers'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersCollection);
+    const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
 
-    const ingredientsCollection = useMemoFirebase(() => {
+    const ingredientsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'ingredients');
+        return query(collection(firestore, 'ingredients'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: ingredients, isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
+    const { data: ingredients, isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsQuery);
+    
+    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'settings', user.uid) : null, [firestore, user]);
+    const { data: settings, isLoading: isLoadingSettings } = useDoc<UserSettings>(settingsDocRef);
 
     const monthlySales = useMemo(() => {
         return (orders || [])
@@ -75,7 +79,7 @@ export default function DashboardPage() {
         return (ingredients || []).filter(i => (i.stockQuantity ?? 0) <= (i.lowStockThreshold ?? 0)).length;
     }, [ingredients]);
 
-    const isLoading = isLoadingOrders || isLoadingCustomers || isLoadingIngredients;
+    const isLoading = isLoadingOrders || isLoadingCustomers || isLoadingIngredients || isLoadingSettings;
 
     return (
         <div className="space-y-8">
@@ -158,7 +162,7 @@ export default function DashboardPage() {
                     </Card>
                 </div>
                 <div className="lg:col-span-1 space-y-8">
-                    <MonthlyGoalCard currentSales={monthlySales} />
+                    <MonthlyGoalCard currentSales={monthlySales} monthlyGoal={settings?.monthlyGoal} isLoading={isLoadingSettings} />
                     <TopProductsCard orders={orders || []} />
                     <UpcomingEvents orders={orders || []} />
                 </div>
@@ -166,3 +170,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    

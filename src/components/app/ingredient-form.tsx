@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo } from 'react';
@@ -35,7 +36,7 @@ const formSchema = z.object({
 type IngredientFormValues = z.infer<typeof formSchema>;
 
 interface IngredientFormProps {
-  onSubmit: (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => void;
+  onSubmit: (ingredient: Omit<Ingredient, 'id' | 'userId'> & { id?: string }) => void;
   editingIngredient?: Ingredient;
   onCancel: () => void;
 }
@@ -321,3 +322,5 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
 };
 
 export default IngredientForm;
+
+    

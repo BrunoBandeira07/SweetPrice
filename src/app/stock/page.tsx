@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -39,16 +39,16 @@ export default function StockPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const ingredientsCollection = useMemoFirebase(() => {
+  const ingredientsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'ingredients');
+    return query(collection(firestore, 'ingredients'), where('userId', '==', user.uid));
   }, [firestore, user]);
-  const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
+  const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsQuery);
 
   const handleStockChange = (ingredient: Ingredient, amount: number) => {
-    if (!ingredientsCollection) return;
+    if (!firestore) return;
     const newQuantity = Math.max(0, (ingredient.stockQuantity || 0) + amount);
-    const docRef = doc(ingredientsCollection, ingredient.id);
+    const docRef = doc(firestore, 'ingredients', ingredient.id);
     setDocumentNonBlocking(docRef, { ...ingredient, stockQuantity: newQuantity }, { merge: true });
     toast({
         title: "Estoque Atualizado!",
@@ -57,8 +57,8 @@ export default function StockPage() {
   };
 
   const handleDateChange = (ingredient: Ingredient, date: Date | undefined) => {
-    if (!ingredientsCollection) return;
-    const docRef = doc(ingredientsCollection, ingredient.id);
+    if (!firestore) return;
+    const docRef = doc(firestore, 'ingredients', ingredient.id);
     setDocumentNonBlocking(docRef, { ...ingredient, expirationDate: date?.toISOString() }, { merge: true });
   };
 

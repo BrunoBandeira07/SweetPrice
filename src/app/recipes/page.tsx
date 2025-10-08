@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -33,15 +33,15 @@ export default function RecipesPage() {
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const recipesCollection = useMemoFirebase(() => {
+    const recipesQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'recipes');
+        return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: recipes = [], isLoading: isLoadingRecipes } = useCollection<Recipe>(recipesCollection);
+    const { data: recipes = [], isLoading: isLoadingRecipes } = useCollection<Recipe>(recipesQuery);
 
     const handleDeleteRecipe = (recipeId: string) => {
-        if (!recipesCollection) return;
-        const docRef = doc(recipesCollection, recipeId);
+        if (!firestore) return;
+        const docRef = doc(firestore, 'recipes', recipeId);
         deleteDocumentNonBlocking(docRef);
         toast({
             title: 'Receita Excluída!',
@@ -175,3 +175,5 @@ export default function RecipesPage() {
         </div>
     );
 }
+
+    

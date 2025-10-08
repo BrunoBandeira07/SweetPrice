@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus } from 'lucide-react';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -40,11 +40,11 @@ export default function CustomersPage() {
     const firestore = useFirestore();
     const { user } = useUser();
     
-    const customersCollection = useMemoFirebase(() => {
+    const customersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'customers');
+        return query(collection(firestore, 'customers'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersCollection);
+    const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(customerFormSchema),
@@ -58,10 +58,12 @@ export default function CustomersPage() {
     });
 
     const handleAddCustomer = (data: CustomerFormValues) => {
-        if (!customersCollection) return;
+        if (!user || !firestore) return;
+        const customersCollection = collection(firestore, 'customers');
         const docRef = doc(customersCollection);
         const newCustomer: Customer = {
             id: docRef.id,
+            userId: user.uid,
             ...data
         };
         setDocumentNonBlocking(docRef, newCustomer, { merge: true });
@@ -74,8 +76,8 @@ export default function CustomersPage() {
     }
     
     const handleDeleteCustomer = (customerId: string) => {
-        if (!customersCollection) return;
-        const docRef = doc(customersCollection, customerId);
+        if (!firestore) return;
+        const docRef = doc(firestore, 'customers', customerId);
         deleteDocumentNonBlocking(docRef);
         toast({
             title: 'Cliente Removido',
@@ -161,3 +163,5 @@ export default function CustomersPage() {
         </div>
     );
 }
+
+    

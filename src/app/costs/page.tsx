@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -17,6 +18,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Skeleton } from '../ui/skeleton';
+import { useFieldArray } from 'react-hook-form';
 
 const customExpenseSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -69,8 +71,8 @@ export default function CostsPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
-  const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'settings', 'costs') : null, [firestore, user]);
-  const { data: savedCosts, isLoading } = useDoc<CostsFormValues>(settingsDocRef);
+  const costsDocRef = useMemoFirebase(() => user ? doc(firestore, 'costs', user.uid) : null, [firestore, user]);
+  const { data: savedCosts, isLoading } = useDoc<CostsFormValues>(costsDocRef);
   
   const form = useForm<CostsFormValues>({
     resolver: zodResolver(costsFormSchema),
@@ -92,8 +94,8 @@ export default function CostsPage() {
   }, [savedCosts, reset]);
 
   const onSubmit = (data: CostsFormValues) => {
-    if (!settingsDocRef) return;
-    setDocumentNonBlocking(settingsDocRef, data, { merge: true });
+    if (!costsDocRef || !user) return;
+    setDocumentNonBlocking(costsDocRef, { ...data, userId: user.uid, id: user.uid }, { merge: true });
     toast({
       title: 'Custos Salvos!',
       description: 'Suas informações de custos foram salvas com sucesso na nuvem.',
@@ -238,3 +240,5 @@ export default function CostsPage() {
     </div>
   );
 }
+
+    

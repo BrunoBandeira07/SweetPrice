@@ -4,7 +4,7 @@
 
 import { useMemo } from 'react';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { DollarSign, Package, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,17 +29,17 @@ export default function ReportsPage() {
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const ordersCollection = useMemoFirebase(() => {
+    const ordersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'orders');
+        return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
+    const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
     
-    const recipesCollection = useMemoFirebase(() => {
+    const recipesQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'recipes');
+        return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
+    const { data: recipes = [] } = useCollection<Recipe>(recipesQuery);
 
     const deliveredOrders = useMemo(() => (orders || []).filter(o => o.deliveryStatus === 'delivered'), [orders]);
 
@@ -99,3 +99,5 @@ export default function ReportsPage() {
         </div>
     );
 }
+
+    

@@ -6,7 +6,7 @@ import type { Ingredient, Recipe, RecipeItem } from "@/lib/types";
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useCollection } from "@/firebase/firestore/use-collection";
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, query, where } from "firebase/firestore";
 import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
@@ -21,25 +21,24 @@ import { useToast } from "@/hooks/use-toast";
 export default function CalculatorPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const ingredientsCollection = useMemoFirebase(() => {
+  const ingredientsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'ingredients');
+    return query(collection(firestore, 'ingredients'), where('userId', '==', user.uid));
   }, [firestore, user]);
-  const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
+  const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsQuery);
   
-  const recipesCollection = useMemoFirebase(() => {
+  const recipesQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'recipes');
+    return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
   }, [firestore, user]);
-  const { data: savedRecipes = [] } = useCollection<Recipe>(recipesCollection);
+  const { data: savedRecipes = [] } = useCollection<Recipe>(recipesQuery);
 
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
-  const { toast } = useToast();
-
-  const searchParams = useSearchParams();
-  const router = useRouter();
   
   useEffect(() => {
     const recipeToLoadId = searchParams.get('loadRecipe');
@@ -62,20 +61,22 @@ export default function CalculatorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, savedRecipes, toast]);
 
-  const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => {
-    if (!ingredientsCollection) return;
+  const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id' | 'userId'> & { id?: string }) => {
+    if (!user || !firestore) return;
+    const ingredientsCollection = collection(firestore, 'ingredients');
     const docRef = ingredient.id ? doc(ingredientsCollection, ingredient.id) : doc(ingredientsCollection);
     const dataToSave: Ingredient = {
       ...ingredient,
       id: docRef.id,
+      userId: user.uid,
     };
     setDocumentNonBlocking(docRef, dataToSave, { merge: true });
     setEditingIngredient(undefined);
   };
 
   const deleteIngredient = (id: string) => {
-    if (!ingredientsCollection) return;
-    const docRef = doc(ingredientsCollection, id);
+    if (!firestore) return;
+    const docRef = doc(firestore, 'ingredients', id);
     deleteDocumentNonBlocking(docRef);
     setRecipeItems((prev) => prev.filter((ri) => ri.type === 'ingredient' && ri.ingredient?.id !== id));
   };
@@ -88,13 +89,15 @@ export default function CalculatorPage() {
     setEditingIngredient(undefined);
   };
 
-  const handleIngredientsImported = (importedIngredients: Omit<Ingredient, 'id'>[]) => {
-    if (!ingredientsCollection) return;
+  const handleIngredientsImported = (importedIngredients: Omit<Ingredient, 'id' | 'userId'>[]) => {
+    if (!user || !firestore) return;
+    const ingredientsCollection = collection(firestore, 'ingredients');
     importedIngredients.forEach(ing => {
       const docRef = doc(ingredientsCollection);
       const dataToSave: Ingredient = {
         ...ing,
         id: docRef.id,
+        userId: user.uid,
       };
       setDocumentNonBlocking(docRef, dataToSave, { merge: true });
     });
@@ -105,12 +108,14 @@ export default function CalculatorPage() {
     })
   };
 
-  const handleSaveRecipe = (recipe: Omit<Recipe, 'id'> & { id?: string }) => {
-    if (!recipesCollection) return;
+  const handleSaveRecipe = (recipe: Omit<Recipe, 'id' | 'userId'> & { id?: string }) => {
+    if (!user || !firestore) return;
+    const recipesCollection = collection(firestore, 'recipes');
     const docRef = recipe.id ? doc(recipesCollection, recipe.id) : doc(recipesCollection);
     const dataToSave: Recipe = {
       ...recipe,
       id: docRef.id,
+      userId: user.uid,
     };
     setDocumentNonBlocking(docRef, dataToSave, { merge: true });
     toast({
@@ -157,3 +162,5 @@ export default function CalculatorPage() {
     </div>
   );
 }
+
+    

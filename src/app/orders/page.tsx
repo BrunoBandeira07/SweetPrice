@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { format, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -98,23 +98,23 @@ export default function OrdersPage() {
     const firestore = useFirestore();
     const { user } = useUser();
     
-    const ordersCollection = useMemoFirebase(() => {
+    const ordersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'orders');
+        return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
+    const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
     
-    const recipesCollection = useMemoFirebase(() => {
+    const recipesQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'recipes');
+        return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
+    const { data: recipes = [] } = useCollection<Recipe>(recipesQuery);
 
     const handleProductionStatusChange = (orderId: string, newStatus: ProductionStatus) => {
-        if (!ordersCollection) return;
+        if (!firestore) return;
         const orderToUpdate = orders.find(o => o.id === orderId);
         if (orderToUpdate) {
-            const docRef = doc(ordersCollection, orderId);
+            const docRef = doc(firestore, 'orders', orderId);
             setDocumentNonBlocking(docRef, { ...orderToUpdate, productionStatus: newStatus }, { merge: true });
             toast({
                 title: "Status Atualizado!",
@@ -123,12 +123,14 @@ export default function OrdersPage() {
         }
     }
 
-     const handleAddOrder = (newOrderData: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => {
-        if (!ordersCollection) return;
+     const handleAddOrder = (newOrderData: Omit<Order, 'id' | 'userId' | 'deliveryStatus' | 'productionStatus'>) => {
+        if (!user || !firestore) return;
+        const ordersCollection = collection(firestore, 'orders');
         const docRef = doc(ordersCollection);
         const orderWithId: Order = { 
             ...newOrderData, 
             id: docRef.id,
+            userId: user.uid,
             deliveryStatus: 'pending',
             productionStatus: 'to_do',
         };
@@ -200,3 +202,5 @@ export default function OrdersPage() {
         </div>
     );
 }
+
+    

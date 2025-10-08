@@ -40,9 +40,8 @@ type Equipments = Record<string, Equipment>;
 export const useCosts = () => {
     const { user } = useUser();
     const firestore = useFirestore();
-    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'settings', 'costs') : null, [firestore, user]);
-    const { data: costs = {} } = useDoc<CostsFormValues>(settingsDocRef);
-
+    const costsDocRef = useMemoFirebase(() => user ? doc(firestore, 'costs', user.uid) : null, [firestore, user]);
+    const { data: costs = {} as CostsFormValues } = useDoc<CostsFormValues>(costsDocRef);
 
     const electricEquipments: Equipments = useMemo(() => ({
         microwavePower: { label: 'Micro-ondas', value: costs.microwavePower, unit: 'Watts' },
@@ -61,3 +60,5 @@ export const useCosts = () => {
 
     return { costs, electricEquipments, gasEquipments };
 }
+
+    

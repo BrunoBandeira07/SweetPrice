@@ -9,41 +9,41 @@ import { Progress } from '../ui/progress';
 import { Check, Edit, Save, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Skeleton } from '../ui/skeleton';
 
 interface MonthlyGoalCardProps {
     currentSales: number;
+    monthlyGoal: number | undefined;
+    isLoading: boolean;
 }
 
-export default function MonthlyGoalCard({ currentSales }: MonthlyGoalCardProps) {
+export default function MonthlyGoalCard({ currentSales, monthlyGoal, isLoading }: MonthlyGoalCardProps) {
     const { toast } = useToast();
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'settings', 'general') : null, [firestore, user]);
-    const { data: settings } = useDoc<{ monthlyGoal?: number }>(settingsDocRef);
+    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'settings', user.uid) : null, [firestore, user]);
     
     const [goal, setGoal] = useState(1000);
     const [isEditing, setIsEditing] = useState(false);
     const [tempGoal, setTempGoal] = useState(goal);
 
     useEffect(() => {
-        const savedGoal = settings?.monthlyGoal;
-        if (savedGoal) {
-            setGoal(savedGoal);
-            setTempGoal(savedGoal);
+        if (monthlyGoal) {
+            setGoal(monthlyGoal);
+            setTempGoal(monthlyGoal);
         }
-    }, [settings]);
+    }, [monthlyGoal]);
 
     const progress = goal > 0 ? (currentSales / goal) * 100 : 0;
     const goalMet = currentSales >= goal;
 
     const handleSave = () => {
-        if (!settingsDocRef) return;
+        if (!settingsDocRef || !user) return;
         
-        setDocumentNonBlocking(settingsDocRef, { monthlyGoal: tempGoal }, { merge: true });
+        setDocumentNonBlocking(settingsDocRef, { monthlyGoal: tempGoal, userId: user.uid, id: user.uid }, { merge: true });
         setGoal(tempGoal);
         setIsEditing(false);
 
@@ -52,6 +52,19 @@ export default function MonthlyGoalCard({ currentSales }: MonthlyGoalCardProps) 
             description: "Sua meta de vendas para o mês foi definida.",
         });
     };
+    
+    if (isLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-1/2"/>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-10 w-full" />
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card>
@@ -100,3 +113,5 @@ export default function MonthlyGoalCard({ currentSales }: MonthlyGoalCardProps) 
         </Card>
     );
 }
+
+    

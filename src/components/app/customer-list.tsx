@@ -10,7 +10,7 @@ import { Users, Lightbulb, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -25,14 +25,14 @@ export default function CustomerList({ customers, onDeleteCustomer }: CustomerLi
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const ordersCollection = useMemoFirebase(() => {
+    const ordersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
-        return collection(firestore, 'users', user.uid, 'orders');
+        return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: allOrders = [] } = useCollection<Order>(ordersCollection);
+    const { data: allOrders = [] } = useCollection<Order>(ordersQuery);
 
     const handleGenerateSuggestion = async (customer: Customer) => {
-        if (!user) return;
+        if (!user || !firestore) return;
         setLoadingSuggestion(customer.id);
         
         const customerOrders = allOrders.filter(o => o.customerName === customer.name);
@@ -40,7 +40,7 @@ export default function CustomerList({ customers, onDeleteCustomer }: CustomerLi
         const result = await getCrmSuggestion({ customer, orders: customerOrders });
 
         if (result.success && result.suggestion) {
-            const customerDocRef = doc(firestore, 'users', user.uid, 'customers', customer.id);
+            const customerDocRef = doc(firestore, 'customers', customer.id);
             setDocumentNonBlocking(customerDocRef, { ...customer, crmSuggestion: result.suggestion }, { merge: true });
         } else {
             toast({
@@ -129,3 +129,5 @@ export default function CustomerList({ customers, onDeleteCustomer }: CustomerLi
         </div>
     );
 }
+
+    
