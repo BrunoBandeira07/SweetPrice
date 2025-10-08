@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { Ingredient, Recipe, RecipeItem } from "@/lib/types";
-import { INITIAL_INGREDIENTS } from "@/lib/constants";
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useCollection } from "@/firebase/firestore/use-collection";
+import { useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection, doc } from "firebase/firestore";
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +18,10 @@ import ImportSheetDialog from "@/components/app/import-sheet-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CalculatorPage() {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const firestore = useFirestore();
+  const ingredientsCollection = useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]);
+  const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
+
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
@@ -24,20 +30,6 @@ export default function CalculatorPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  useEffect(() => {
-    try {
-      const storedIngredients = localStorage.getItem('ingredients');
-       if (storedIngredients) {
-        setIngredients(JSON.parse(storedIngredients));
-      } else {
-        setIngredients(INITIAL_INGREDIENTS)
-      }
-    } catch (error) {
-       console.error("Failed to load ingredients from localStorage", error);
-       setIngredients(INITIAL_INGREDIENTS);
-    }
-  }, []);
-
   useEffect(() => {
     try {
       const storedRecipes = localStorage.getItem('savedRecipes');
@@ -74,26 +66,19 @@ export default function CalculatorPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, toast]);
 
-  const updateIngredients = (newIngredients: Ingredient[]) => {
-      setIngredients(newIngredients);
-      localStorage.setItem('ingredients', JSON.stringify(newIngredients));
-  }
-
-  const addOrUpdateIngredient = (ingredient: Ingredient) => {
-    let newIngredients: Ingredient[];
-    const existing = ingredients.find((i) => i.id === ingredient.id);
-    if (existing) {
-        newIngredients = ingredients.map((i) => (i.id === ingredient.id ? ingredient : i));
-    } else {
-        newIngredients = [...ingredients, ingredient];
-    }
-    updateIngredients(newIngredients);
+  const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => {
+    const docRef = ingredient.id ? doc(ingredientsCollection, ingredient.id) : doc(ingredientsCollection);
+    const dataToSave: Ingredient = {
+      ...ingredient,
+      id: docRef.id,
+    };
+    setDocumentNonBlocking(docRef, dataToSave, { merge: true });
     setEditingIngredient(undefined);
   };
 
   const deleteIngredient = (id: string) => {
-    const newIngredients = ingredients.filter((i) => i.id !== id);
-    updateIngredients(newIngredients);
+    const docRef = doc(ingredientsCollection, id);
+    deleteDocumentNonBlocking(docRef);
     setRecipeItems((prev) => prev.filter((ri) => ri.type === 'ingredient' && ri.ingredient?.id !== id));
   };
 
@@ -105,9 +90,16 @@ export default function CalculatorPage() {
     setEditingIngredient(undefined);
   };
 
-  const handleIngredientsImported = (importedIngredients: Ingredient[]) => {
-    const newIngredients = [...ingredients, ...importedIngredients];
-    updateIngredients(newIngredients);
+  const handleIngredientsImported = (importedIngredients: Omit<Ingredient, 'id'>[]) => {
+    importedIngredients.forEach(ing => {
+      const docRef = doc(ingredientsCollection);
+      const dataToSave: Ingredient = {
+        ...ing,
+        id: docRef.id,
+      };
+      setDocumentNonBlocking(docRef, dataToSave, { merge: true });
+    });
+
     toast({
       title: "Sucesso!",
       description: `${importedIngredients.length} ingredientes foram importados com sucesso.`,
@@ -141,6 +133,7 @@ export default function CalculatorPage() {
               ingredients={ingredients}
               onEdit={startEditing}
               onDelete={deleteIngredient}
+              isLoading={isLoadingIngredients}
             />
           </CardContent>
         </Card>

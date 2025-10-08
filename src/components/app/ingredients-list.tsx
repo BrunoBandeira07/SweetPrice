@@ -17,19 +17,37 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Badge } from '../ui/badge';
+import { Skeleton } from '../ui/skeleton';
 
 
 interface IngredientsListProps {
   ingredients: Ingredient[];
   onEdit: (ingredient: Ingredient) => void;
   onDelete: (id: string) => void;
+  isLoading: boolean;
 }
 
-const IngredientsList = ({ ingredients, onEdit, onDelete }: IngredientsListProps) => {
+const IngredientsList = ({ ingredients, onEdit, onDelete, isLoading }: IngredientsListProps) => {
   const getUnitLabel = (value: string) => {
     return UNITS.find(u => u.value === value)?.label || value;
   };
   
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-center space-x-4 p-2">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (ingredients.length === 0) {
     return (
       <div className="text-center py-8 border-2 border-dashed rounded-lg">

@@ -21,7 +21,7 @@ import type { Ingredient } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImportSheetDialogProps {
-    onIngredientsImported: (ingredients: Ingredient[]) => void;
+    onIngredientsImported: (ingredients: Omit<Ingredient, 'id'>[]) => void;
 }
 
 const initialState = {

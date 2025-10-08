@@ -73,7 +73,7 @@ export async function getSubstitutions(prevState: any, formData: FormData): Prom
 
 interface ImportResult {
     success: boolean;
-    data?: Ingredient[];
+    data?: Omit<Ingredient, 'id'>[];
     error?: string;
 }
 
@@ -132,7 +132,7 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
              return { success: false, error: `Formato de planilha inválido. Faltando colunas obrigatórias: ${missingColumns.join(', ')}.` };
         }
         
-        const ingredients: Ingredient[] = dataRows
+        const ingredients: Omit<Ingredient, 'id'>[] = dataRows
             .map((row) => {
                 const columns = row.split(',');
                 if (columns.length < 4 || !columns[columnIndices.item]) return null;
@@ -159,7 +159,6 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
                 }
 
                 return {
-                    id: new Date().toISOString() + Math.random(),
                     name,
                     packageSize,
                     cost,
@@ -170,7 +169,7 @@ export async function importFromSheet(prevState: any, formData: FormData): Promi
                     supplier: undefined,
                 };
             })
-            .filter((ing): ing is Ingredient => ing !== null);
+            .filter((ing): ing is Omit<Ingredient, 'id'> => ing !== null);
 
         return { success: true, data: ingredients };
     } catch (error) {

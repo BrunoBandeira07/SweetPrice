@@ -35,7 +35,7 @@ const formSchema = z.object({
 type IngredientFormValues = z.infer<typeof formSchema>;
 
 interface IngredientFormProps {
-  onSubmit: (ingredient: Ingredient) => void;
+  onSubmit: (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => void;
   editingIngredient?: Ingredient;
   onCancel: () => void;
 }
@@ -94,8 +94,8 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
   }, [editingIngredient, form]);
 
   const handleFormSubmit = (values: IngredientFormValues) => {
-    const ingredientData: Ingredient = {
-      id: editingIngredient?.id || new Date().toISOString(),
+    const ingredientData = {
+      id: editingIngredient?.id,
       ...values,
       unitCost: calculatedUnitCost > 0 ? calculatedUnitCost : values.unitCost,
     };
@@ -246,7 +246,7 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
               <FormItem>
                 <FormLabel>Qtd. em Estoque</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Ex: 500" {...field} />
+                  <Input type="number" placeholder="Ex: 500" {...field} value={field.value ?? ''}/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -259,7 +259,7 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
               <FormItem>
                 <FormLabel>Alerta de Estoque Baixo</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Ex: 100" {...field} />
+                  <Input type="number" placeholder="Ex: 100" {...field} value={field.value ?? ''}/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
