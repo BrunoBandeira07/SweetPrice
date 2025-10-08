@@ -55,7 +55,10 @@ export default function DashboardPage() {
     }, [firestore, user]);
     const { data: ingredients, isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsQuery);
     
-    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'settings', user.uid) : null, [firestore, user]);
+    const settingsDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'settings', user.uid);
+    }, [firestore, user]);
     const { data: settings, isLoading: isLoadingSettings } = useDoc<UserSettings>(settingsDocRef);
 
     const monthlySales = useMemo(() => {

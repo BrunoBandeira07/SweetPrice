@@ -24,14 +24,17 @@ export default function MonthlyGoalCard({ currentSales, monthlyGoal, isLoading }
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'settings', user.uid) : null, [firestore, user]);
+    const settingsDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'settings', user.uid);
+    }, [firestore, user]);
     
     const [goal, setGoal] = useState(1000);
     const [isEditing, setIsEditing] = useState(false);
     const [tempGoal, setTempGoal] = useState(goal);
 
     useEffect(() => {
-        if (monthlyGoal) {
+        if (monthlyGoal !== undefined) {
             setGoal(monthlyGoal);
             setTempGoal(monthlyGoal);
         }
@@ -113,5 +116,3 @@ export default function MonthlyGoalCard({ currentSales, monthlyGoal, isLoading }
         </Card>
     );
 }
-
-    
