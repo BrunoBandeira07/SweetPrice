@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Order } from '@/lib/types';
 import { BarChart } from 'lucide-react';
+import { Skeleton } from '../ui/skeleton';
 
 interface TopProductsCardProps {
     orders: Order[];
+    isLoading: boolean;
 }
 
 interface ProductCount {
@@ -16,9 +18,11 @@ interface ProductCount {
     quantity: number;
 }
 
-export default function TopProductsCard({ orders }: TopProductsCardProps) {
+export default function TopProductsCard({ orders, isLoading }: TopProductsCardProps) {
 
     const topProducts = useMemo(() => {
+        if (isLoading || !orders) return [];
+
         const productMap: { [key: string]: number } = {};
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
@@ -44,7 +48,7 @@ export default function TopProductsCard({ orders }: TopProductsCardProps) {
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 5);
 
-    }, [orders]);
+    }, [orders, isLoading]);
 
     return (
         <Card>
@@ -56,7 +60,13 @@ export default function TopProductsCard({ orders }: TopProductsCardProps) {
                 <CardDescription>Os produtos mais vendidos neste mês.</CardDescription>
             </CardHeader>
             <CardContent>
-                {topProducts.length > 0 ? (
+                {isLoading ? (
+                     <div className="space-y-2">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                    </div>
+                ) : topProducts.length > 0 ? (
                     <Table>
                         <TableHeader>
                             <TableRow>

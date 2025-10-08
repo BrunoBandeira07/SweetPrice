@@ -11,23 +11,25 @@ import { Skeleton } from "../ui/skeleton";
 interface AiSuggestionCardProps {
     criticalStockCount: number;
     monthlySales: number;
+    isLoading: boolean;
 }
 
 
-export default function AiSuggestionCard({ criticalStockCount, monthlySales }: AiSuggestionCardProps) {
+export default function AiSuggestionCard({ criticalStockCount, monthlySales, isLoading: isLoadingProps }: AiSuggestionCardProps) {
     const [suggestion, setSuggestion] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
+    
+    const isLoading = isLoadingProps || isGenerating;
 
-    const fetchSuggestion = async () => {
-        setIsLoading(true);
-        // We use a date string as a key to get a new suggestion once a day
+    const fetchSuggestion = async (forceRefresh = false) => {
+        setIsGenerating(true);
         const today = new Date().toISOString().split('T')[0];
         const storedSuggestion = localStorage.getItem('dashboardSuggestion');
         const storedDate = localStorage.getItem('dashboardSuggestionDate');
 
-        if (storedSuggestion && storedDate === today) {
+        if (storedSuggestion && storedDate === today && !forceRefresh) {
             setSuggestion(storedSuggestion);
-            setIsLoading(false);
+            setIsGenerating(false);
             return;
         }
 
@@ -39,13 +41,16 @@ export default function AiSuggestionCard({ criticalStockCount, monthlySales }: A
         } else {
             setSuggestion("Não foi possível gerar uma sugestão no momento.");
         }
-        setIsLoading(false);
+        setIsGenerating(false);
     }
 
     useEffect(() => {
-        fetchSuggestion();
+        // Only fetch if data is not loading from props
+        if (!isLoadingProps) {
+            fetchSuggestion();
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [criticalStockCount, monthlySales]);
+    }, [isLoadingProps, criticalStockCount, monthlySales]);
     
 
     return (
@@ -67,13 +72,13 @@ export default function AiSuggestionCard({ criticalStockCount, monthlySales }: A
                     <p className="italic">"{suggestion}"</p>
                 )}
 
-                <Button variant="ghost" size="sm" onClick={fetchSuggestion} disabled={isLoading}>
+                <Button variant="ghost" size="sm" onClick={() => fetchSuggestion(true)} disabled={isLoading}>
                     {isLoading ? (
                         <Loader2 className="mr-2 animate-spin" />
                     ) : (
                         <RefreshCw className="mr-2" />
                     )}
-                    Gerar nova sugestão
+                    {isGenerating ? 'Gerando...' : 'Gerar nova sugestão'}
                 </Button>
             </CardContent>
         </Card>

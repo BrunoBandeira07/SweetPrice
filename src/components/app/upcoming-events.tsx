@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Order } from '@/lib/types';
@@ -11,10 +11,18 @@ import { CalendarDays } from 'lucide-react';
 
 interface UpcomingEventsProps {
     orders: Order[];
+    isLoading: boolean;
 }
 
-export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
+export default function UpcomingEvents({ orders, isLoading }: UpcomingEventsProps) {
     const { toast } = useToast();
+
+    const deliveryDays = useMemo(() => {
+        if (!orders) return [];
+        return (orders || [])
+            .filter(o => o.deliveryStatus === 'pending')
+            .map(o => new Date(o.deliveryDate));
+    }, [orders]);
 
     const handleDayClick = (day: Date) => {
         const ordersOnDay = (orders || []).filter(o => 
@@ -43,21 +51,23 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center p-0">
-                
+                {isLoading ? (
+                    <div className="p-4">
+                        <Skeleton className="h-[280px] w-[280px]" />
+                    </div>
+                ) : (
                     <Calendar
                         mode="single"
                         onDayClick={handleDayClick}
                         className="rounded-md"
                         modifiers={{
-                            deliveryDay: (orders || [])
-                                .filter(o => o.deliveryStatus === 'pending')
-                                .map(o => new Date(o.deliveryDate))
+                            deliveryDay: deliveryDays,
                         }}
                         modifierClassNames={{
                            deliveryDay: 'bg-primary text-primary-foreground rounded-full',
                         }}
                     />
-               
+                )}
             </CardContent>
         </Card>
     );

@@ -120,7 +120,11 @@ export default function DashboardPage() {
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                  <div className="lg:col-span-2 grid grid-cols-1 gap-8">
-                    <AiSuggestionCard criticalStockCount={criticalStockCount} monthlySales={monthlySales} />
+                    <AiSuggestionCard 
+                        criticalStockCount={criticalStockCount} 
+                        monthlySales={monthlySales}
+                        isLoading={isLoadingIngredients || isLoadingOrders}
+                    />
                     <Card>
                         <CardHeader>
                             <CardTitle>Próximas Encomendas</CardTitle>
@@ -166,8 +170,8 @@ export default function DashboardPage() {
                 </div>
                 <div className="lg:col-span-1 space-y-8">
                     <MonthlyGoalCard currentSales={monthlySales} monthlyGoal={settings?.monthlyGoal} isLoading={isLoadingSettings} />
-                    <TopProductsCard orders={orders || []} />
-                    <UpcomingEvents orders={orders || []} />
+                    <TopProductsCard orders={orders || []} isLoading={isLoadingOrders} />
+                    <UpcomingEvents orders={orders || []} isLoading={isLoadingOrders} />
                 </div>
             </div>
         </div>
