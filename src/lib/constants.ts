@@ -1,4 +1,5 @@
-import type { Ingredient, Unit, Order, Recipe, DeliveryStatus, ProductionStatus } from './types';
+
+import type { Ingredient, Unit, Order, Recipe, DeliveryStatus, ProductionStatus, Customer } from './types';
 
 export const UNITS: { value: Unit; label: string }[] = [
   { value: 'g', label: 'Gramas (g)' },
@@ -8,9 +9,8 @@ export const UNITS: { value: Unit; label: string }[] = [
   { value: 'un', label: 'Unidades (un)' },
 ];
 
-export const INITIAL_INGREDIENTS: Ingredient[] = [
+export const INITIAL_INGREDIENTS: Omit<Ingredient, 'id' | 'userId'>[] = [
   {
-    id: '1',
     name: 'Farinha de Trigo',
     packageSize: 1000,
     unit: 'g',
@@ -20,9 +20,9 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     stockQuantity: 2000,
     lowStockThreshold: 500,
     expirationDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(),
+    category: 'Secos'
   },
   {
-    id: '2',
     name: 'Açúcar Refinado',
     packageSize: 1000,
     unit: 'g',
@@ -31,9 +31,9 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
      unitCost: 0.0048,
      stockQuantity: 1500,
      lowStockThreshold: 500,
+     category: 'Secos'
   },
   {
-    id: '3',
     name: 'Ovos',
     packageSize: 12,
     unit: 'un',
@@ -43,9 +43,9 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
      stockQuantity: 24,
      lowStockThreshold: 12,
      expirationDate: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString(),
+     category: 'Frescos'
   },
   {
-    id: '4',
     name: 'Manteiga Sem Sal',
     packageSize: 200,
     unit: 'g',
@@ -54,9 +54,9 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     unitCost: 0.0425,
     stockQuantity: 400,
     lowStockThreshold: 200,
+    category: 'Laticínios'
   },
   {
-    id: '5',
     name: 'Chocolate em Pó 50%',
     packageSize: 500,
     unit: 'g',
@@ -65,61 +65,80 @@ export const INITIAL_INGREDIENTS: Ingredient[] = [
     unitCost: 0.03,
     stockQuantity: 100,
     lowStockThreshold: 250,
+    category: 'Secos'
+  },
+   {
+    name: 'Leite Condensado',
+    packageSize: 395,
+    unit: 'g',
+    cost: 6.90,
+    supplier: 'Laticínios Sul',
+    unitCost: 0.0174,
+    stockQuantity: 20,
+    lowStockThreshold: 10,
+    category: 'Laticínios'
   },
 ];
 
-const MOCK_RECIPE_1: Recipe = {
-  id: 'rec1',
-  name: 'Bolo de Chocolate',
-  items: [
-    { id: 'i1', type: 'ingredient', name: 'Farinha de Trigo', quantity: 250, unit: 'g', cost: 1.375, ingredient: INITIAL_INGREDIENTS[0] },
-    { id: 'i2', type: 'ingredient', name: 'Açúcar Refinado', quantity: 200, unit: 'g', cost: 0.96, ingredient: INITIAL_INGREDIENTS[1] },
-    { id: 'i3', type: 'ingredient', name: 'Ovos', quantity: 3, unit: 'un', cost: 2.5, ingredient: INITIAL_INGREDIENTS[2] },
-  ],
-  totalCost: 4.835,
-  suggestedPrice: 15.00
-};
+export const INITIAL_RECIPES: Omit<Recipe, 'id' | 'userId' | 'items'>[] = [
+  {
+    name: 'Bolo de Chocolate Simples',
+    totalCost: 5.89,
+    suggestedPrice: 25.00,
+    margin: 150,
+    marginType: 'percentage',
+  },
+  {
+    name: 'Cento de Brigadeiros',
+    totalCost: 28.5,
+    suggestedPrice: 120.00,
+    margin: 100,
+    marginType: 'percentage',
+  }
+];
 
-const MOCK_RECIPE_2: Recipe = {
-  id: 'rec2',
-  name: 'Brigadeiro (Cento)',
-  items: [
-     { id: 'i4', type: 'ingredient', name: 'Chocolate em Pó 50%', quantity: 100, unit: 'g', cost: 3.00, ingredient: INITIAL_INGREDIENTS[4] },
-  ],
-  totalCost: 3.00,
-  suggestedPrice: 120.00
-};
-
-
-export const INITIAL_ORDERS: Order[] = [
+export const INITIAL_CUSTOMERS: Omit<Customer, 'id' | 'userId'>[] = [
     {
-        id: '1',
+        name: 'Ana Silva',
+        phone: '(11) 99999-8888',
+        instagram: '@anasilva',
+        lastOrderDate: new Date(new Date().setDate(new Date().getDate() - 10)).toISOString(),
+        crmSuggestion: "Oferecer um desconto no próximo Bolo de Chocolate, seu produto favorito."
+    },
+    {
+        name: 'João Costa',
+        phone: '(21) 98888-7777',
+        lastOrderDate: new Date(new Date().setDate(new Date().getDate() - 25)).toISOString(),
+    }
+];
+
+export const INITIAL_ORDERS: Omit<Order, 'id' | 'userId'>[] = [
+    {
         customerName: 'Ana Silva',
         deliveryDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(),
-        items: [{ recipe: MOCK_RECIPE_1, quantity: 1 }],
-        total: 15.00,
+        items: [], // Will be populated by seed function
+        total: 25.00,
         deliveryStatus: 'pending',
         productionStatus: 'producing'
     },
     {
-        id: '2',
         customerName: 'João Costa',
         deliveryDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
-        items: [{ recipe: MOCK_RECIPE_2, quantity: 2 }],
-        total: 240.00,
+        items: [], // Will be populated by seed function
+        total: 120.00,
         deliveryStatus: 'pending',
         productionStatus: 'to_do'
     },
      {
-        id: '3',
         customerName: 'Mariana Oliveira',
         deliveryDate: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
-        items: [{ recipe: MOCK_RECIPE_1, quantity: 2 }],
-        total: 30.00,
+        items: [], // Will be populated by seed function
+        total: 50.00,
         deliveryStatus: 'delivered',
         productionStatus: 'ready_for_delivery'
     }
 ];
+
 
 export const PRODUCTION_STATUS_MAP: Record<ProductionStatus, { label: string; color: string }> = {
     to_do: { label: "A Fazer", color: "bg-gray-200 text-gray-800" },

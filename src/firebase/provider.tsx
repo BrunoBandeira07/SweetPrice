@@ -1,23 +1,18 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useReducer } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
+import { Firestore, doc, getDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { seedInitialData } from './seed-data';
 
 interface FirebaseProviderProps {
   children: ReactNode;
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
-}
-
-// Internal state for user authentication
-interface UserAuthState {
-  user: User | null;
-  isUserLoading: boolean;
-  userError: Error | null;
 }
 
 // Combined state for the Firebase context
@@ -75,7 +70,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => { // Auth state determined
+      async (firebaseUser) => { // Auth state determined
+        if (firebaseUser) {
+          // Check if user is new and seed data if necessary
+          const settingsRef = doc(firestore, 'settings', firebaseUser.uid);
+          const docSnap = await getDoc(settingsRef);
+          if (!docSnap.exists()) {
+            await seedInitialData(firebaseUser.uid, firestore);
+          }
+        }
         if (isUserLoading) setIsUserLoading(false);
         setUserError(null);
         forceUpdate(); // Force a re-render to ensure currentUser is fresh
@@ -89,7 +92,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     );
     return () => unsubscribe(); // Cleanup
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth]); // Depends on the auth instance
+  }, [auth, firestore]); // Depends on the auth instance
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
@@ -179,7 +182,7 @@ export const useUser = (): UserHookResult => {
     throw new Error('useUser must be used within a FirebaseProvider.');
   }
   const { auth, isUserLoading, userError } = context;
-  const user = auth?.currentUser ?? null;
+  const user = isUserLoading ? null : auth?.currentUser ?? null;
   
   return { user, isUserLoading, userError };
 };
