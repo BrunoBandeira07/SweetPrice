@@ -1,13 +1,14 @@
+
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Ingredient, Recipe, RecipeItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookMarked, Plus, Trash2, BookUp, CookingPot, Clock, Zap } from 'lucide-react';
+import { BookMarked, Plus, Trash2, BookUp, CookingPot, Clock, Zap, Eraser, Sparkles } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -20,10 +21,12 @@ interface RecipeBuilderProps {
   ingredients: Ingredient[];
   recipeItems: RecipeItem[];
   setRecipeItems: React.Dispatch<React.SetStateAction<RecipeItem[]>>;
-  onSaveRecipe: (recipe: Omit<Recipe, 'id'> & { id?: string }) => void;
+  onSaveRecipe: (recipe: Omit<Recipe, 'id' | 'userId' | 'items'> & { id?: string; items: RecipeItem[] }) => void;
+  onClearRecipe: () => void;
+  editingRecipe?: Recipe;
 }
 
-const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe }: RecipeBuilderProps) => {
+const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe, onClearRecipe, editingRecipe }: RecipeBuilderProps) => {
   const { costs, electricEquipments, gasEquipments } = useCosts();
 
   // Ingredient state
@@ -53,6 +56,25 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
     return equip ? { key: selectedEquipmentKey, ...equip } : null;
   }, [selectedEquipmentKey, allEquipments]);
 
+  useEffect(() => {
+    if (editingRecipe) {
+        setRecipeName(editingRecipe.name);
+        const marginValue = editingRecipe.margin;
+        const type = editingRecipe.marginType;
+        if (marginValue !== undefined && type) {
+            setMargin(marginValue);
+            setMarginType(type);
+        } else {
+            // Default values if not present
+            setMargin(100);
+            setMarginType('percentage');
+        }
+    } else {
+        setRecipeName('');
+        setMargin(100);
+        setMarginType('percentage');
+    }
+  }, [editingRecipe]);
 
   const addRecipeItem = (type: 'ingredient' | 'labor' | 'equipment') => {
     let newItem: RecipeItem | null = null;
@@ -139,16 +161,18 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
   }, [totalCost, margin, marginType, costs]);
 
 
-  const handleSaveRecipe = () => {
+  const handleSave = () => {
     if (!recipeName.trim() || recipeItems.length === 0) return;
 
-    const newRecipe: Omit<Recipe, 'id'> = {
+    onSaveRecipe({
+      id: editingRecipe?.id,
       name: recipeName,
       items: recipeItems,
-      totalCost: totalCost,
-      suggestedPrice: suggestedPrice,
-    };
-    onSaveRecipe(newRecipe);
+      totalCost,
+      suggestedPrice,
+      margin,
+      marginType,
+    });
     setRecipeName('');
     setIsSaveDialogOpen(false);
   };
@@ -156,45 +180,51 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
   return (
     <Card className="h-full">
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start flex-wrap gap-2">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <BookMarked/>
-              Montar Receita
+              <Sparkles className="text-primary"/>
+              {editingRecipe ? "Editando Receita" : "Calculadora de Receita"}
             </CardTitle>
             <CardDescription>
-              Adicione ingredientes, mão de obra e equipamentos para montar a receita e calcular seu custo.
+              {editingRecipe ? `Modificando "${editingRecipe.name}"` : "Crie uma nova receita e calcule seu preço."}
             </CardDescription>
           </div>
-          <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" disabled={recipeItems.length === 0}>
-                <BookUp className="mr-2"/>
-                Salvar Receita
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Salvar Receita no Livro</DialogTitle>
-                <DialogDescription>Dê um nome para sua receita para salvá-la no seu Livro de Receitas.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-2">
-                <Label htmlFor="recipeName">Nome da Receita</Label>
-                <Input 
-                  id="recipeName"
-                  value={recipeName}
-                  onChange={(e) => setRecipeName(e.target.value)}
-                  placeholder="Ex: Bolo de Chocolate"
-                />
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancelar</Button>
-                </DialogClose>
-                <Button onClick={handleSaveRecipe} disabled={!recipeName.trim()}>Salvar</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-2">
+             <Button variant="ghost" size="sm" onClick={onClearRecipe} disabled={recipeItems.length === 0 && !editingRecipe}>
+                <Eraser className="mr-2"/>
+                Limpar
+            </Button>
+            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                <DialogTrigger asChild>
+                <Button variant="outline" disabled={recipeItems.length === 0}>
+                    <BookUp className="mr-2"/>
+                    Salvar Receita
+                </Button>
+                </DialogTrigger>
+                <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{editingRecipe ? "Atualizar Receita" : "Salvar Nova Receita"}</DialogTitle>
+                    <DialogDescription>Dê um nome para sua receita para salvá-la no seu Livro de Receitas.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <Label htmlFor="recipeName">Nome da Receita</Label>
+                    <Input 
+                    id="recipeName"
+                    value={recipeName}
+                    onChange={(e) => setRecipeName(e.target.value)}
+                    placeholder="Ex: Bolo de Chocolate"
+                    />
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button" variant="secondary">Cancelar</Button>
+                    </DialogClose>
+                    <Button onClick={handleSave} disabled={!recipeName.trim()}>{editingRecipe ? "Atualizar" : "Salvar"}</Button>
+                </DialogFooter>
+                </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -226,7 +256,7 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
                 <Label>Quantidade ({selectedIngredient?.unit})</Label>
                 <Input
                   type="number"
-                  value={ingredientQuantity}
+                  value={ingredientQuantity === 0 ? '' : ingredientQuantity}
                   onChange={(e) => setIngredientQuantity(Number(e.target.value))}
                   placeholder="Ex: 250"
                   className="w-full"
@@ -244,7 +274,7 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
                     <Label>Tempo Gasto (minutos)</Label>
                     <Input
                     type="number"
-                    value={laborTime}
+                    value={laborTime === 0 ? '' : laborTime}
                     onChange={(e) => setLaborTime(Number(e.target.value))}
                     placeholder="Ex: 60"
                     />
@@ -274,7 +304,7 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
                     <Label>Tempo de Uso (minutos)</Label>
                     <Input
                         type="number"
-                        value={equipmentTime}
+                        value={equipmentTime === 0 ? '' : equipmentTime}
                         onChange={(e) => setEquipmentTime(Number(e.target.value))}
                         placeholder="Ex: 15"
                         className="w-full"
@@ -327,41 +357,43 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex flex-col items-start space-y-4">
-        <Separator />
-         <div className="w-full space-y-4 pt-4">
-          <h3 className="text-lg font-semibold">Definir Preço de Venda</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            <div className="space-y-2">
-              <Label>Margem de Lucro</Label>
-              <Input 
-                type="number" 
-                value={margin} 
-                onChange={(e) => setMargin(Number(e.target.value))}
-              />
+      {recipeItems.length > 0 && (
+        <CardFooter className="flex flex-col items-start space-y-4">
+            <Separator />
+            <div className="w-full space-y-4 pt-4">
+            <h3 className="text-lg font-semibold">Definir Preço de Venda</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="space-y-2">
+                <Label>Margem de Lucro</Label>
+                <Input 
+                    type="number" 
+                    value={margin === 0 ? '' : margin} 
+                    onChange={(e) => setMargin(Number(e.target.value))}
+                />
+                </div>
+                <RadioGroup defaultValue="percentage" value={marginType} onValueChange={(value: 'percentage' | 'fixed') => setMarginType(value)} className="pt-6">
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="percentage" id="percentage" />
+                    <Label htmlFor="percentage">Percentual (%)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="fixed" id="fixed" />
+                    <Label htmlFor="fixed">Valor Fixo (R$)</Label>
+                </div>
+                </RadioGroup>
             </div>
-            <RadioGroup defaultValue="percentage" value={marginType} onValueChange={(value: 'percentage' | 'fixed') => setMarginType(value)} className="pt-6">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="percentage" id="percentage" />
-                <Label htmlFor="percentage">Percentual (%)</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="fixed" id="fixed" />
-                <Label htmlFor="fixed">Valor Fixo (R$)</Label>
-              </div>
-            </RadioGroup>
-          </div>
-        </div>
-        <Separator />
-        <div className="w-full flex justify-between items-center text-lg font-bold pt-4">
-          <span>Custo Total da Receita:</span>
-          <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost)}</span>
-        </div>
-        <div className="w-full flex justify-between items-center text-xl font-bold p-4 bg-accent/30 rounded-lg">
-          <span>Preço de Venda Sugerido:</span>
-          <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(suggestedPrice)}</span>
-        </div>
-      </CardFooter>
+            </div>
+            <Separator />
+            <div className="w-full flex justify-between items-center text-lg font-bold pt-4">
+            <span>Custo Total da Receita:</span>
+            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost)}</span>
+            </div>
+            <div className="w-full flex justify-between items-center text-xl font-bold p-4 bg-accent/30 rounded-lg">
+            <span>Preço de Venda Sugerido:</span>
+            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(suggestedPrice)}</span>
+            </div>
+        </CardFooter>
+      )}
     </Card>
   );
 };

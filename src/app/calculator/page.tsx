@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import type { Ingredient, Recipe, RecipeItem } from "@/lib/types";
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useCollection } from "@/firebase/firestore/use-collection";
@@ -39,6 +39,7 @@ export default function CalculatorPage() {
 
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
   
   useEffect(() => {
     const recipeToLoadId = searchParams.get('loadRecipe');
@@ -46,24 +47,33 @@ export default function CalculatorPage() {
       try {
           const recipeToLoad = savedRecipes.find(r => r.id === recipeToLoadId);
           if (recipeToLoad) {
+            setEditingRecipe(recipeToLoad);
             // Re-hydrate ingredients from the main ingredients list
             const hydratedItems = recipeToLoad.items.map(item => {
                 if (item.type === 'ingredient' && item.ingredient?.id) {
                     const fullIngredient = ingredients.find(i => i.id === item.ingredient!.id);
-                    return { ...item, ingredient: fullIngredient };
+                    // Ensure the latest ingredient data is used
+                    return { ...item, ingredient: fullIngredient, cost: (fullIngredient?.unitCost || 0) * item.quantity * (fullIngredient?.lossFactor || 1) };
                 }
                 return item;
             });
+
             setRecipeItems(hydratedItems as RecipeItem[]);
+            
             toast({
               title: `Receita "${recipeToLoad.name}" carregada!`,
-              description: 'Os itens foram adicionados à montagem.',
+              description: 'Os itens foram adicionados à montagem para edição.',
             });
             // Clean up URL
             router.replace('/calculator', { scroll: false });
           }
       } catch (error) {
         console.error("Failed to load recipe from URL", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar receita",
+          description: "Não foi possível carregar os dados da receita selecionada."
+        });
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,7 +96,7 @@ export default function CalculatorPage() {
     if (!firestore) return;
     const docRef = doc(firestore, 'ingredients', id);
     deleteDocumentNonBlocking(docRef);
-    setRecipeItems((prev) => prev.filter((ri) => ri.type === 'ingredient' && ri.ingredient?.id !== id));
+    setRecipeItems((prev) => prev.filter((ri) => !(ri.type === 'ingredient' && ri.ingredient?.id === id)));
   };
 
   const startEditing = (ingredient: Ingredient) => {
@@ -116,19 +126,43 @@ export default function CalculatorPage() {
     })
   };
 
-  const handleSaveRecipe = (recipe: Omit<Recipe, 'id' | 'userId'> & { id?: string }) => {
+  const handleSaveRecipe = (recipe: Omit<Recipe, 'id' | 'userId' | 'items'> & { id?: string; items: RecipeItem[] }) => {
     if (!user || !firestore) return;
     const recipesCollection = collection(firestore, 'recipes');
     const docRef = recipe.id ? doc(recipesCollection, recipe.id) : doc(recipesCollection);
-    const dataToSave: Omit<Recipe, 'id'> & { id: string, userId: string } = {
+    
+    // Create a serializable version of items, removing the full ingredient object
+    const serializedItems = recipe.items.map(item => {
+      const { ingredient, ...rest } = item;
+      if (item.type === 'ingredient' && ingredient) {
+        return { ...rest, ingredient: { id: ingredient.id, name: ingredient.name } };
+      }
+      return rest;
+    });
+    
+    const dataToSave = {
       ...recipe,
+      items: serializedItems,
       id: docRef.id,
       userId: user.uid,
     };
+
     setDocumentNonBlocking(docRef, dataToSave, { merge: true });
     toast({
       title: 'Receita Salva!',
-      description: `A receita "${recipe.name}" foi adicionada ao seu Livro de Receitas.`,
+      description: `A receita "${recipe.name}" foi salva no seu Livro de Receitas.`,
+    });
+    // Clear the form after saving
+    setRecipeItems([]);
+    setEditingRecipe(undefined);
+  }
+  
+  const clearRecipe = () => {
+    setRecipeItems([]);
+    setEditingRecipe(undefined);
+    toast({
+      title: 'Calculadora Limpa',
+      description: 'Você pode começar uma nova receita do zero.',
     });
   }
 
@@ -161,6 +195,8 @@ export default function CalculatorPage() {
               recipeItems={recipeItems}
               setRecipeItems={setRecipeItems}
               onSaveRecipe={handleSaveRecipe}
+              onClearRecipe={clearRecipe}
+              editingRecipe={editingRecipe}
             />
           </div>
           <div className="lg:col-span-2">

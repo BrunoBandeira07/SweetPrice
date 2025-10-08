@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
@@ -30,7 +31,7 @@ const orderFormSchema = z.object({
 type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 interface AddOrderFormProps {
-    onAddOrder: (order: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => void;
+    onAddOrder: (order: Omit<Order, 'id' | 'userId' | 'deliveryStatus' | 'productionStatus'>) => void;
     recipes: Recipe[];
 }
 
@@ -50,6 +51,8 @@ export default function AddOrderForm({ onAddOrder, recipes }: AddOrderFormProps)
         control,
         name: 'items',
     });
+    
+    const validRecipes = recipes.filter(r => r.suggestedPrice && r.suggestedPrice > 0);
 
     const watchedItems = watch('items');
     const total = useMemo(() => watchedItems.reduce((acc, currentItem) => {
@@ -141,8 +144,8 @@ export default function AddOrderForm({ onAddOrder, recipes }: AddOrderFormProps)
                                                     <SelectValue placeholder="Selecione a receita" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {recipes.map(recipe => (
-                                                        <SelectItem key={recipe.id} value={recipe.id}>{recipe.name}</SelectItem>
+                                                    {validRecipes.map(recipe => (
+                                                        <SelectItem key={recipe.id} value={recipe.id}>{recipe.name} - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(recipe.suggestedPrice || 0)}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>

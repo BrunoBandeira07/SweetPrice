@@ -1,4 +1,5 @@
 
+
 export type Unit = 'g' | 'kg' | 'ml' | 'l' | 'un';
 export type OperationalUnit = 'min' | 'h' | 'un';
 
@@ -27,8 +28,8 @@ export interface RecipeItem {
   quantity: number;
   unit: Unit | OperationalUnit;
   cost: number;
-  // If type is 'ingredient', this will be the ingredient object
-  ingredient?: Ingredient;
+  // If type is 'ingredient', this will be the ingredient object or a reference
+  ingredient?: Partial<Ingredient>;
   // If type is 'equipment', this can hold the equipment key
   equipmentKey?: string;
 }
@@ -41,6 +42,8 @@ export interface Recipe {
     items: RecipeItem[];
     totalCost?: number;
     suggestedPrice?: number;
+    margin?: number;
+    marginType?: 'percentage' | 'fixed';
 }
 
 export type DeliveryStatus = 'pending' | 'delivered' | 'cancelled';

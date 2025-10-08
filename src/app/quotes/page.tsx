@@ -57,7 +57,7 @@ export default function QuotesPage() {
         setQuote({ ...updatedQuote, total });
     };
 
-    const validRecipes = recipes.filter(r => r.name && r.suggestedPrice);
+    const validRecipes = recipes.filter(r => r.name && r.suggestedPrice && r.suggestedPrice > 0);
 
     return (
         <div className="w-full">

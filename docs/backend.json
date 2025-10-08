@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Ingredient": {
@@ -36,8 +37,7 @@
         "userId",
         "name",
         "cost",
-        "unit",
-        "supplier"
+        "unit"
       ]
     },
     "Recipe": {
@@ -58,29 +58,38 @@
           "type": "string",
           "description": "Name of the recipe."
         },
-        "ingredientIds": {
+        "items": {
           "type": "array",
-          "description": "References to Ingredients. (Relationship: Recipe 1:N Ingredient)",
+          "description": "List of items in the recipe, including ingredients, labor, and equipment usage.",
           "items": {
-            "type": "string"
+            "type": "object"
           }
         },
-        "profitMargin": {
-          "type": "number",
-          "description": "Profit margin to be applied to the total cost of the recipe (percentage or fixed value)."
+        "totalCost": {
+            "type": "number",
+            "description": "Total calculated cost of all items in the recipe."
         },
-        "sellingPrice": {
+        "suggestedPrice": {
           "type": "number",
-          "description": "Automatically calculated selling price based on ingredient costs and profit margin."
+          "description": "Automatically calculated selling price based on total cost and profit margin."
+        },
+        "margin": {
+          "type": "number",
+          "description": "The value of the profit margin."
+        },
+        "marginType": {
+          "type": "string",
+          "enum": ["percentage", "fixed"],
+          "description": "The type of profit margin (percentage or fixed value)."
         }
       },
       "required": [
         "id",
         "userId",
         "name",
-        "ingredientIds",
-        "profitMargin",
-        "sellingPrice"
+        "items",
+        "totalCost",
+        "suggestedPrice"
       ]
     },
     "Customer": {

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BookUp, ChefHat, Trash2 } from 'lucide-react';
-import type { Recipe } from '@/lib/types';
+import type { Recipe, RecipeItem } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -138,7 +138,7 @@ export default function RecipesPage() {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {Array.isArray(recipe.items) && recipe.items.map(item => (
+                                                    {Array.isArray(recipe.items) && recipe.items.map((item: RecipeItem) => (
                                                         <TableRow key={item.id}>
                                                             <TableCell>{item.name}</TableCell>
                                                             <TableCell><Badge variant="secondary">{getItemTypeLabel(item.type)}</Badge></TableCell>
