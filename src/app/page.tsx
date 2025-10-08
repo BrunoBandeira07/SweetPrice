@@ -35,7 +35,7 @@ const StatCard = ({ title, value, icon: Icon, description, className, isLoading 
 
 export default function DashboardPage() {
     const firestore = useFirestore();
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     
     const ordersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -56,9 +56,9 @@ export default function DashboardPage() {
     const { data: ingredients, isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsQuery);
     
     const settingsDocRef = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
+        if (!user?.uid || !firestore) return null;
         return doc(firestore, 'settings', user.uid);
-    }, [firestore, user]);
+    }, [firestore, user?.uid]);
     const { data: settings, isLoading: isLoadingSettings } = useDoc<UserSettings>(settingsDocRef);
 
     const monthlySales = useMemo(() => {
@@ -91,7 +91,7 @@ export default function DashboardPage() {
         return (customers || []).length;
     }, [customers, isLoadingCustomers]);
 
-    const isLoading = isLoadingOrders || isLoadingCustomers || isLoadingIngredients || isLoadingSettings;
+    const isLoading = isUserLoading || isLoadingOrders || isLoadingCustomers || isLoadingIngredients || isLoadingSettings;
 
     return (
         <div className="space-y-8">
@@ -102,29 +102,29 @@ export default function DashboardPage() {
                     value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlySales)} 
                     icon={DollarSign} 
                     description="Total de vendas em encomendas entregues" 
-                    isLoading={isLoadingOrders}
+                    isLoading={isLoading}
                 />
                 <StatCard 
                     title="Encomendas Pendentes" 
                     value={`+${pendingOrdersCount}`} 
                     icon={ShoppingCart} 
                     description="Total de encomendas a serem produzidas/entregues" 
-                    isLoading={isLoadingOrders}
+                    isLoading={isLoading}
                 />
                 <StatCard 
                     title="Total de Clientes" 
                     value={`${customerCount}`} 
                     icon={Users} 
                     description="Número de clientes cadastrados" 
-                    isLoading={isLoadingCustomers}
+                    isLoading={isLoading}
                 />
                 <StatCard 
                     title="Estoque Crítico" 
                     value={`${criticalStockCount}`} 
                     icon={AlertTriangle} 
                     description="Itens com estoque baixo ou zerado"
-                    isLoading={isLoadingIngredients}
-                    className={cn(!isLoadingIngredients && criticalStockCount > 0 && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800 [&>div>svg]:text-yellow-800 dark:[&>div>svg]:text-yellow-300")}
+                    isLoading={isLoading}
+                    className={cn(!isLoading && criticalStockCount > 0 && "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800 [&>div>svg]:text-yellow-800 dark:[&>div>svg]:text-yellow-300")}
                 />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -132,14 +132,14 @@ export default function DashboardPage() {
                     <AiSuggestionCard 
                         criticalStockCount={criticalStockCount} 
                         monthlySales={monthlySales}
-                        isLoading={isLoadingIngredients || isLoadingOrders}
+                        isLoading={isLoading}
                     />
                     <Card>
                         <CardHeader>
                             <CardTitle>Próximas Encomendas</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             {isLoadingOrders ? (
+                             {isLoading ? (
                                 <div className="space-y-2">
                                     <Skeleton className="h-10 w-full" />
                                     <Skeleton className="h-10 w-full" />
@@ -178,9 +178,9 @@ export default function DashboardPage() {
                     </Card>
                 </div>
                 <div className="lg:col-span-1 space-y-8">
-                    <MonthlyGoalCard currentSales={monthlySales} monthlyGoal={settings?.monthlyGoal} isLoading={isLoadingSettings} />
-                    <TopProductsCard orders={orders || []} isLoading={isLoadingOrders} />
-                    <UpcomingEvents orders={orders || []} isLoading={isLoadingOrders} />
+                    <MonthlyGoalCard currentSales={monthlySales} monthlyGoal={settings?.monthlyGoal} isLoading={isLoading} />
+                    <TopProductsCard orders={orders || []} isLoading={isLoading} />
+                    <UpcomingEvents orders={orders || []} isLoading={isLoading} />
                 </div>
             </div>
         </div>
