@@ -1,0 +1,201 @@
+{
+  "entities": {
+    "Ingredient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ingredient",
+      "type": "object",
+      "description": "Represents an ingredient used in recipes, including cost, quantity, and supplier information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ingredient."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the ingredient."
+        },
+        "cost": {
+          "type": "number",
+          "description": "Cost per unit of the ingredient."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement for the ingredient (e.g., grams, kilograms, ounces)."
+        },
+        "supplier": {
+          "type": "string",
+          "description": "Name of the supplier for the ingredient."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "cost",
+        "unit"
+      ]
+    },
+    "Recipe": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Recipe",
+      "type": "object",
+      "description": "Represents a recipe composed of multiple ingredients and their quantities.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the recipe."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the recipe."
+        },
+        "ingredientQuantities": {
+          "type": "array",
+          "description": "List of IngredientQuantity objects.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "ingredientQuantities"
+      ]
+    },
+    "IngredientQuantity": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "IngredientQuantity",
+      "type": "object",
+      "description": "Connects ingredients to a recipe and defines the quantity of the ingredient needed.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ingredient quantity."
+        },
+        "ingredientId": {
+          "type": "string",
+          "description": "Reference to Ingredient. (Relationship: Ingredient 1:N IngredientQuantity)"
+        },
+        "recipeId": {
+          "type": "string",
+          "description": "Reference to Recipe. (Relationship: Recipe 1:N IngredientQuantity)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the ingredient used in the recipe."
+        }
+      },
+      "required": [
+        "id",
+        "ingredientId",
+        "recipeId",
+        "quantity"
+      ]
+    },
+    "ProfitMargin": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProfitMargin",
+      "type": "object",
+      "description": "Defines the profit margin to be applied to a recipe's cost.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the profit margin."
+        },
+        "recipeId": {
+          "type": "string",
+          "description": "Reference to Recipe. (Relationship: Recipe 1:1 ProfitMargin)"
+        },
+        "marginType": {
+          "type": "string",
+          "description": "Type of margin (percentage or fixed value)."
+        },
+        "marginValue": {
+          "type": "number",
+          "description": "Value of the profit margin."
+        }
+      },
+      "required": [
+        "id",
+        "recipeId",
+        "marginType",
+        "marginValue"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/ingredients/{ingredientId}",
+        "definition": {
+          "entityName": "Ingredient",
+          "schema": {
+            "$ref": "#/backend/entities/Ingredient"
+          },
+          "description": "Stores ingredient information, including cost, unit, and supplier. No denormalized authorization data is needed as there are no authorization policies defined.",
+          "params": [
+            {
+              "name": "ingredientId",
+              "description": "Unique identifier for the ingredient."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/recipes/{recipeId}",
+        "definition": {
+          "entityName": "Recipe",
+          "schema": {
+            "$ref": "#/backend/entities/Recipe"
+          },
+          "description": "Stores recipe information, including the list of ingredient quantities. No denormalized authorization data is needed as there are no authorization policies defined.",
+          "params": [
+            {
+              "name": "recipeId",
+              "description": "Unique identifier for the recipe."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/ingredientQuantities/{ingredientQuantityId}",
+        "definition": {
+          "entityName": "IngredientQuantity",
+          "schema": {
+            "$ref": "#/backend/entities/IngredientQuantity"
+          },
+          "description": "Connects ingredients to recipes and defines the quantity of each ingredient needed. Includes recipeId for filtering.",
+          "params": [
+            {
+              "name": "ingredientQuantityId",
+              "description": "Unique identifier for the ingredient quantity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/profitMargins/{profitMarginId}",
+        "definition": {
+          "entityName": "ProfitMargin",
+          "schema": {
+            "$ref": "#/backend/entities/ProfitMargin"
+          },
+          "description": "Defines the profit margin for a recipe. Includes recipeId for filtering.",
+          "params": [
+            {
+              "name": "profitMarginId",
+              "description": "Unique identifier for the profit margin."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support SweetPrice's core features, focusing on ingredient registration, recipe building, profit margin definition, and suggested selling price calculation. The design prioritizes Authorization Independence and QAPs (Rules are not Filters) to ensure security and scalability.\n\n*   **Authorization Independence:** There's no direct user ownership required in the provided data model. Instead, data access can be managed using other strategies (e.g., allowing anyone to create/read recipes and ingredients). If user-specific data isolation were needed (e.g., private recipes), a `users/{userId}/recipes/{recipeId}` structure with path-based rules and denormalized `userId` into the `Recipe` documents would be appropriate. Similarly, a `users/{userId}/ingredients/{ingredientId}` path could secure user-specific ingredients.\n*   **QAPs (Rules are not Filters):** The segregation of data into distinct collections (e.g., `ingredients`, `recipes`, `ingredientQuantities`, `profitMargins`) ensures that list operations can be secured effectively. Each collection can have specific security rules applied without affecting other collections.\n*   **Data Modeling:** The `IngredientQuantity` subcollection establishes the relationship between the ingredients and the recipes. Every `IngredientQuantity` document will contain the `recipeId` to enable listing of all the ingredients from one recipe.\n*   **Global data:** The structure is designed to let users view all information in the app. If this changes, a new approach will be needed.\n\nIf roles or user specific permissions are introduced, a `members` map will be needed."
+  }
+}
