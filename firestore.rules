@@ -1,83 +1,180 @@
 /**
- * @file Firebase Security Rules for SweetPrice application.
+ * @file Firebase Security Rules for Firestore.
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model, where each user has exclusive access to their own data stored under their unique user ID.
+ * @core_philosophy This ruleset enforces a strict user-ownership model. Each document
+ *   is associated with a specific user ID, and only that user has read and write
+ *   access to their own documents. This ensures data privacy and prevents
+ *   unauthorized access.
  *
- * Data Structure:
- * All data (ingredients and recipes) is nested under /users/{userId}, ensuring clear ownership and simplified security rules.
+ * @data_structure The Firestore database is organized into top-level collections
+ *   for each entity type (ingredients, recipes, customers, etc.). Each document
+ *   within these collections contains a `userId` field indicating the owner.
+ *   Some collections, like `settings` and `costs`, use the `userId` directly
+ *   as the document ID.
  *
- * Key Security Decisions:
- * - Users can only access their own ingredients and recipes.
- * - Listing other user's data is disallowed.
- * - Data validation is relaxed in this prototyping phase, focusing on ownership and relational integrity.
+ * @key_security_decisions
+ *   - User listing is generally disallowed to prevent information leakage.
+ *   - The `settings` and `costs` collections are designed to be user-specific, with
+ *     the document ID being the `userId`. This simplifies security rules and
+ *     ensures that each user can only access their own settings.
  *
- * Denormalization for Authorization:
- * The data model uses path-based ownership: the user ID is embedded in the path, eliminating the need for additional reads to determine ownership.
+ * @denormalization_for_authorization
+ *   - Each document includes a `userId` field. This denormalization is
+ *     crucial for efficient security rules, as it allows us to verify
+ *     ownership without performing additional reads. The rules will check
+ *     if `request.auth.uid == resource.data.userId`.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user-specific ingredient documents.
-     * @path /users/{userId}/ingredients/{ingredientId}
-     * @allow (get, list) Authenticated user accessing their own ingredient data.
-     *   Request: { auth: { uid: 'user123' }, method: 'get', path: '/databases/(default)/documents/users/user123/ingredients/ingredient456' }
-     * @allow (create) Authenticated user creating an ingredient under their user ID.
-     *   Request: { auth: { uid: 'user123' }, method: 'create', path: '/databases/(default)/documents/users/user123/ingredients/newIngredient' }
-     * @allow (update, delete) Authenticated user updating or deleting their own ingredient data.
-     *   Request: { auth: { uid: 'user123' }, method: 'update', path: '/databases/(default)/documents/users/user123/ingredients/ingredient456' }
-     * @deny (get, list) Authenticated user attempting to access another user's ingredient data.
-     *   Request: { auth: { uid: 'user456' }, method: 'get', path: '/databases/(default)/documents/users/user123/ingredients/ingredient456' }
-     * @deny (create, update, delete) Unauthenticated user attempting to modify any ingredient data.
-     *   Request: { auth: null, method: 'create', path: '/databases/(default)/documents/users/user123/ingredients/newIngredient' }
+     * @description Controls access to the ingredients collection. Only the owner (the user whose ID matches the ingredient's userId field) can create, read, update, or delete an ingredient.
+     * @path /ingredients/{ingredientId}
+     * @allow (create) - Authenticated user creates a new ingredient with their UID as the userId: `request.auth.uid == "user_abc"` and `request.resource.data.userId == "user_abc"`.
+     * @allow (get) - Authenticated user reads an ingredient where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (update) - Authenticated user updates an ingredient where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (delete) - Authenticated user deletes an ingredient where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @deny (create) - Authenticated user tries to create an ingredient with a userId that doesn't match their UID: `request.auth.uid == "user_abc"` but `request.resource.data.userId == "user_def"`.
+     * @deny (get) - Authenticated user tries to read an ingredient where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (update) - Authenticated user tries to update an ingredient where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (delete) - Authenticated user tries to delete an ingredient where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
      * @principle Enforces document ownership for all operations.
      */
-    match /users/{userId}/ingredients/{ingredientId} {
+    match /ingredients/{ingredientId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Controls access to the recipes collection. Only the owner (the user whose ID matches the recipe's userId field) can create, read, update, or delete a recipe.
+     * @path /recipes/{recipeId}
+     * @allow (create) - Authenticated user creates a new recipe with their UID as the userId: `request.auth.uid == "user_abc"` and `request.resource.data.userId == "user_abc"`.
+     * @allow (get) - Authenticated user reads a recipe where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (update) - Authenticated user updates a recipe where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (delete) - Authenticated user deletes a recipe where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @deny (create) - Authenticated user tries to create a recipe with a userId that doesn't match their UID: `request.auth.uid == "user_abc"` but `request.resource.data.userId == "user_def"`.
+     * @deny (get) - Authenticated user tries to read a recipe where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (update) - Authenticated user tries to update a recipe where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (delete) - Authenticated user tries to delete a recipe where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /recipes/{recipeId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Controls access to the customers collection. Only the owner (the user whose ID matches the customer's userId field) can create, read, update, or delete a customer.
+     * @path /customers/{customerId}
+     * @allow (create) - Authenticated user creates a new customer with their UID as the userId: `request.auth.uid == "user_abc"` and `request.resource.data.userId == "user_abc"`.
+     * @allow (get) - Authenticated user reads a customer where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (update) - Authenticated user updates a customer where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (delete) - Authenticated user deletes a customer where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @deny (create) - Authenticated user tries to create a customer with a userId that doesn't match their UID: `request.auth.uid == "user_abc"` but `request.resource.data.userId == "user_def"`.
+     * @deny (get) - Authenticated user tries to read a customer where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (update) - Authenticated user tries to update a customer where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (delete) - Authenticated user tries to delete a customer where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /customers/{customerId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Controls access to the orders collection. Only the owner (the user whose ID matches the order's userId field) can create, read, update, or delete an order.
+     * @path /orders/{orderId}
+     * @allow (create) - Authenticated user creates a new order with their UID as the userId: `request.auth.uid == "user_abc"` and `request.resource.data.userId == "user_abc"`.
+     * @allow (get) - Authenticated user reads an order where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (update) - Authenticated user updates an order where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (delete) - Authenticated user deletes an order where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @deny (create) - Authenticated user tries to create an order with a userId that doesn't match their UID: `request.auth.uid == "user_abc"` but `request.resource.data.userId == "user_def"`.
+     * @deny (get) - Authenticated user tries to read an order where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (update) - Authenticated user tries to update an order where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (delete) - Authenticated user tries to delete an order where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Controls access to the campaigns collection. Only the owner (the user whose ID matches the campaign's userId field) can create, read, update, or delete a campaign.
+     * @path /campaigns/{campaignId}
+     * @allow (create) - Authenticated user creates a new campaign with their UID as the userId: `request.auth.uid == "user_abc"` and `request.resource.data.userId == "user_abc"`.
+     * @allow (get) - Authenticated user reads a campaign where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (update) - Authenticated user updates a campaign where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @allow (delete) - Authenticated user deletes a campaign where their UID matches the userId: `request.auth.uid == "user_abc"` and `resource.data.userId == "user_abc"`.
+     * @deny (create) - Authenticated user tries to create a campaign with a userId that doesn't match their UID: `request.auth.uid == "user_abc"` but `request.resource.data.userId == "user_def"`.
+     * @deny (get) - Authenticated user tries to read a campaign where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (update) - Authenticated user tries to update a campaign where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @deny (delete) - Authenticated user tries to delete a campaign where their UID doesn't match the userId: `request.auth.uid == "user_abc"` but `resource.data.userId == "user_def"`.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /campaigns/{campaignId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.userId);
+    }
+
+    /**
+     * @description Controls access to the settings collection.  Since the document ID is the userId, only the user with the matching UID can access their settings.
+     * @path /settings/{userId}
+     * @allow (create) - Authenticated user creates settings for themselves where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @allow (get) - Authenticated user reads their own settings where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @allow (update) - Authenticated user updates their own settings where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @allow (delete) - Authenticated user deletes their own settings where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @deny (create) - Authenticated user tries to create settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @deny (get) - Authenticated user tries to read settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @deny (update) - Authenticated user tries to update settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @deny (delete) - Authenticated user tries to delete settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @principle Enforces document ownership for all operations, using the document ID as the userId.
+     */
+    match /settings/{userId} {
       allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == request.auth.uid;
       allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to user-specific recipe documents.
-     * @path /users/{userId}/recipes/{recipeId}
-     * @allow (get, list) Authenticated user accessing their own recipe data.
-     *   Request: { auth: { uid: 'user123' }, method: 'get', path: '/databases/(default)/documents/users/user123/recipes/recipe456' }
-     * @allow (create) Authenticated user creating a recipe under their user ID.
-     *   Request: { auth: { uid: 'user123' }, method: 'create', path: '/databases/(default)/documents/users/user123/recipes/newRecipe' }
-     * @allow (update, delete) Authenticated user updating or deleting their own recipe data.
-     *   Request: { auth: { uid: 'user123' }, method: 'update', path: '/databases/(default)/documents/users/user123/recipes/recipe456' }
-     * @deny (get, list) Authenticated user attempting to access another user's recipe data.
-     *   Request: { auth: { uid: 'user456' }, method: 'get', path: '/databases/(default)/documents/users/user123/recipes/recipe456' }
-     * @deny (create, update, delete) Unauthenticated user attempting to modify any recipe data.
-     *   Request: { auth: null, method: 'create', path: '/databases/(default)/documents/users/user123/recipes/newRecipe' }
-     * @principle Enforces document ownership for all operations.
+     * @description Controls access to the costs collection. Since the document ID is the userId, only the user with the matching UID can access their cost settings.
+     * @path /costs/{userId}
+     * @allow (create) - Authenticated user creates cost settings for themselves where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @allow (get) - Authenticated user reads their own cost settings where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @allow (update) - Authenticated user updates their own cost settings where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @allow (delete) - Authenticated user deletes their own cost settings where the document ID matches their UID: `request.auth.uid == "user_abc"` and `userId == "user_abc"`.
+     * @deny (create) - Authenticated user tries to create cost settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @deny (get) - Authenticated user tries to read cost settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @deny (update) - Authenticated user tries to update cost settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @deny (delete) - Authenticated user tries to delete cost settings for a different user: `request.auth.uid == "user_abc"` but `userId == "user_def"`.
+     * @principle Enforces document ownership for all operations, using the document ID as the userId.
      */
-    match /users/{userId}/recipes/{recipeId} {
+    match /costs/{userId} {
       allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
-    
-    /**
-     * @description Controls access to user-specific settings documents.
-     * @path /users/{userId}/settings/{settingId}
-     */
-    match /users/{userId}/settings/{settingId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == request.auth.uid;
       allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -87,7 +184,7 @@ service cloud.firestore {
     }
 
     function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+        return isSignedIn() && isOwner(userId) && resource != null;
     }
   }
 }
