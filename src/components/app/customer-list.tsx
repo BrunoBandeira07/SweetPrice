@@ -9,27 +9,21 @@ import { Button } from '../ui/button';
 import { Users, Lightbulb, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc, query, where } from 'firebase/firestore';
-import { useCollection } from '@/firebase/firestore/use-collection';
+import { useUser, useFirestore } from "@/firebase/provider";
+import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface CustomerListProps {
     customers: Customer[];
+    allOrders: Order[];
     onDeleteCustomer: (customerId: string) => void;
 }
 
-export default function CustomerList({ customers, onDeleteCustomer }: CustomerListProps) {
+export default function CustomerList({ customers, allOrders, onDeleteCustomer }: CustomerListProps) {
     const { toast } = useToast();
     const [loadingSuggestion, setLoadingSuggestion] = useState<string | null>(null);
     const firestore = useFirestore();
     const { user } = useUser();
-
-    const ordersQuery = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
-        return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
-    }, [firestore, user]);
-    const { data: allOrders = [] } = useCollection<Order>(ordersQuery);
 
     const handleGenerateSuggestion = async (customer: Customer) => {
         if (!user || !firestore) return;

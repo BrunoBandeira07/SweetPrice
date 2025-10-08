@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { InputMask } from '@/components/ui/input-mask';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import type { Customer } from '@/lib/types';
+import type { Customer, Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -45,6 +45,12 @@ export default function CustomersPage() {
         return query(collection(firestore, 'customers'), where('userId', '==', user.uid));
     }, [firestore, user]);
     const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
+
+    const ordersQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
+    }, [firestore, user]);
+    const { data: allOrders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(customerFormSchema),
@@ -85,6 +91,7 @@ export default function CustomersPage() {
         });
     };
 
+    const isLoading = isLoadingCustomers || isLoadingOrders;
 
     return (
         <div className="w-full">
@@ -145,7 +152,7 @@ export default function CustomersPage() {
                         </Dialog>
                     </CardHeader>
                     <CardContent>
-                        {isLoadingCustomers ? (
+                        {isLoading ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[...Array(3)].map((_, i) => (
                                     <Card key={i}>
@@ -156,7 +163,7 @@ export default function CustomersPage() {
                                 ))}
                             </div>
                         ) : (
-                           <CustomerList customers={customers} onDeleteCustomer={handleDeleteCustomer} />
+                           <CustomerList customers={customers} allOrders={allOrders} onDeleteCustomer={handleDeleteCustomer} />
                         )}
                     </CardContent>
                 </Card>
