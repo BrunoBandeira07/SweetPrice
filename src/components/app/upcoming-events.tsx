@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -22,7 +23,7 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
     }, []);
 
     const handleDayClick = (day: Date) => {
-        const ordersOnDay = orders.filter(o => 
+        const ordersOnDay = (orders || []).filter(o => 
             new Date(o.deliveryDate).toDateString() === day.toDateString() &&
             o.deliveryStatus === 'pending'
         );
@@ -56,7 +57,7 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
                         onDayClick={handleDayClick}
                         className="rounded-md"
                         modifiers={{
-                            deliveryDay: orders
+                            deliveryDay: (orders || [])
                                 .filter(o => o.deliveryStatus === 'pending')
                                 .map(o => new Date(o.deliveryDate))
                         }}

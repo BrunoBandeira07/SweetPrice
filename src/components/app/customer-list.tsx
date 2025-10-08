@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useActionState } from 'react';
+import { useState } from 'react';
 import type { Customer, Order } from '@/lib/types';
 import { getCrmSuggestion } from '@/app/actions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
@@ -8,41 +8,34 @@ import { Button } from '../ui/button';
 import { Users, Lightbulb, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface CustomerListProps {
     customers: Customer[];
-    setCustomers: (customers: Customer[]) => void;
+    onDeleteCustomer: (customerId: string) => void;
 }
 
-export default function CustomerList({ customers, setCustomers }: CustomerListProps) {
+export default function CustomerList({ customers, onDeleteCustomer }: CustomerListProps) {
     const { toast } = useToast();
     const [loadingSuggestion, setLoadingSuggestion] = useState<string | null>(null);
+    const firestore = useFirestore();
 
-    const handleDeleteCustomer = (customerId: string) => {
-        const updatedCustomers = customers.filter(c => c.id !== customerId);
-        setCustomers(updatedCustomers);
-        toast({
-            title: 'Cliente Removido',
-            description: 'O cliente foi removido da sua lista.'
-        });
-    };
+    const ordersCollection = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+    const { data: allOrders = [] } = useCollection<Order>(ordersCollection);
 
     const handleGenerateSuggestion = async (customer: Customer) => {
         setLoadingSuggestion(customer.id);
         
-        // In a real app, you would fetch the actual order history for this customer.
-        // For now, we'll use the mock orders from local storage.
-        const storedOrders = localStorage.getItem('savedOrders');
-        const allOrders: Order[] = storedOrders ? JSON.parse(storedOrders) : [];
         const customerOrders = allOrders.filter(o => o.customerName === customer.name);
 
         const result = await getCrmSuggestion({ customer, orders: customerOrders });
 
         if (result.success && result.suggestion) {
-            const updatedCustomers = customers.map(c => 
-                c.id === customer.id ? { ...c, crmSuggestion: result.suggestion } : c
-            );
-            setCustomers(updatedCustomers);
+            const customerDocRef = doc(firestore, 'customers', customer.id);
+            setDocumentNonBlocking(customerDocRef, { ...customer, crmSuggestion: result.suggestion }, { merge: true });
         } else {
             toast({
                 variant: 'destructive',
@@ -87,7 +80,7 @@ export default function CustomerList({ customers, setCustomers }: CustomerListPr
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteCustomer(customer.id)} className="bg-destructive hover:bg-destructive/90">Deletar</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => onDeleteCustomer(customer.id)} className="bg-destructive hover:bg-destructive/90">Deletar</AlertDialogAction>
                                 </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>

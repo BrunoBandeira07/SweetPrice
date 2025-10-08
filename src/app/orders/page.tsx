@@ -1,9 +1,13 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { format, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,12 +17,13 @@ import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-import type { Order, ProductionStatus } from '@/lib/types';
-import { INITIAL_ORDERS, PRODUCTION_STATUS_MAP } from '@/lib/constants';
+import type { Order, ProductionStatus, Recipe } from '@/lib/types';
+import { PRODUCTION_STATUS_MAP } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { CircleDotDashed, ShoppingCart, CheckCircle2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AddOrderForm from '@/components/app/add-order-form';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (orderId: string, status: ProductionStatus) => void; }) => {
@@ -67,7 +72,7 @@ const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (o
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Status da Produção</label>
                         <Select value={order.productionStatus} onValueChange={(value) => onStatusChange(order.id, value as ProductionStatus)}>
-                            <SelectTrigger className={PRODUCTION_STATUS_MAP[order.productionStatus].color}>
+                            <SelectTrigger className={PRODUCTION_STATUS_MAP[order.productionStatus]?.color}>
                                 <SelectValue placeholder="Selecione o status"/>
                             </SelectTrigger>
                             <SelectContent>
@@ -88,51 +93,36 @@ const OrderCard = ({ order, onStatusChange }: { order: Order; onStatusChange: (o
 }
 
 export default function OrdersPage() {
-    const [orders, setOrders] = useState<Order[]>([]);
     const { toast } = useToast();
-
-    useEffect(() => {
-        try {
-            const storedOrders = localStorage.getItem('orders');
-            if (storedOrders) {
-                setOrders(JSON.parse(storedOrders));
-            } else {
-                setOrders(INITIAL_ORDERS);
-                localStorage.setItem('orders', JSON.stringify(INITIAL_ORDERS));
-            }
-        } catch (error) {
-            console.error("Failed to load orders from localStorage", error);
-            setOrders(INITIAL_ORDERS);
-        }
-    }, []);
-
-    const updateOrders = (newOrders: Order[]) => {
-        setOrders(newOrders);
-        localStorage.setItem('orders', JSON.stringify(newOrders));
-    }
+    const firestore = useFirestore();
+    
+    const ordersCollection = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+    const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
+    
+    const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+    const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
 
     const handleProductionStatusChange = (orderId: string, newStatus: ProductionStatus) => {
-        const updatedOrders = orders.map(order => {
-            if (order.id === orderId) {
-                return { ...order, productionStatus: newStatus };
-            }
-            return order;
-        });
-        updateOrders(updatedOrders);
-        toast({
-            title: "Status Atualizado!",
-            description: `A encomenda de ${updatedOrders.find(o => o.id === orderId)?.customerName} foi atualizada para "${PRODUCTION_STATUS_MAP[newStatus].label}".`
-        });
+        const orderToUpdate = orders.find(o => o.id === orderId);
+        if (orderToUpdate) {
+            const docRef = doc(ordersCollection, orderId);
+            setDocumentNonBlocking(docRef, { ...orderToUpdate, productionStatus: newStatus }, { merge: true });
+            toast({
+                title: "Status Atualizado!",
+                description: `A encomenda de ${orderToUpdate.customerName} foi atualizada para "${PRODUCTION_STATUS_MAP[newStatus].label}".`
+            });
+        }
     }
 
-     const handleAddOrder = (newOrder: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => {
+     const handleAddOrder = (newOrderData: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => {
+        const docRef = doc(ordersCollection);
         const orderWithId: Order = { 
-            ...newOrder, 
-            id: new Date().toISOString(),
+            ...newOrderData, 
+            id: docRef.id,
             deliveryStatus: 'pending',
             productionStatus: 'to_do',
         };
-        updateOrders([...orders, orderWithId]);
+        setDocumentNonBlocking(docRef, orderWithId, { merge: true });
     }
 
     const pendingOrders = orders
@@ -146,7 +136,7 @@ export default function OrdersPage() {
     return (
         <div className="w-full space-y-8">
                 <div>
-                  <AddOrderForm onAddOrder={handleAddOrder} />
+                  <AddOrderForm onAddOrder={handleAddOrder} recipes={recipes} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                     
@@ -156,7 +146,12 @@ export default function OrdersPage() {
                             <CircleDotDashed className="h-8 w-8 text-primary"/>
                             <h1 className="text-3xl font-bold">Encomendas Pendentes ({pendingOrders.length})</h1>
                         </div>
-                        {pendingOrders.length > 0 ? (
+                        {isLoadingOrders ? (
+                            <div className="space-y-4">
+                                <Skeleton className="h-40 w-full" />
+                                <Skeleton className="h-40 w-full" />
+                            </div>
+                        ) : pendingOrders.length > 0 ? (
                            <div className="space-y-4">
                              {pendingOrders.map(order => (
                                 <OrderCard key={order.id} order={order} onStatusChange={handleProductionStatusChange} />
@@ -175,7 +170,11 @@ export default function OrdersPage() {
                             <CheckCircle2 className="h-8 w-8 text-green-600"/>
                             <h1 className="text-3xl font-bold">Histórico de Encomendas ({completedOrders.length})</h1>
                         </div>
-                        {completedOrders.length > 0 ? (
+                        {isLoadingOrders ? (
+                            <div className="space-y-4">
+                                <Skeleton className="h-40 w-full" />
+                            </div>
+                        ) : completedOrders.length > 0 ? (
                              <div className="space-y-4">
                                 {completedOrders.map(order => (
                                     <OrderCard key={order.id} order={order} onStatusChange={handleProductionStatusChange} />

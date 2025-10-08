@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -21,7 +22,7 @@ export default function ProductRevenueChart({ orders }: ProductRevenueChartProps
   const chartData = React.useMemo(() => {
     const productRevenue: Record<string, { name: string; value: number }> = {};
     
-    orders.forEach(order => {
+    (orders || []).forEach(order => {
         order.items.forEach(item => {
             const productName = item.recipe.name;
             if (!productRevenue[productName]) {

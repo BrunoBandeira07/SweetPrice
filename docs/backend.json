@@ -6,33 +6,20 @@
       "type": "object",
       "description": "Represents an ingredient used in recipes, including cost, quantity, and supplier information.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ingredient."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the ingredient."
-        },
-        "cost": {
-          "type": "number",
-          "description": "Cost per unit of the ingredient."
-        },
-        "unit": {
-          "type": "string",
-          "description": "Unit of measurement for the ingredient (e.g., grams, kilograms, ounces)."
-        },
-        "supplier": {
-          "type": "string",
-          "description": "Name of the supplier for the ingredient."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cost": { "type": "number" },
+        "packageSize": { "type": "number" },
+        "unit": { "type": "string", "enum": ["g", "kg", "ml", "l", "un"] },
+        "supplier": { "type": "string" },
+        "category": { "type": "string" },
+        "unitCost": { "type": "number" },
+        "lossFactor": { "type": "number" },
+        "stockQuantity": { "type": "number" },
+        "lowStockThreshold": { "type": "number" },
+        "expirationDate": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name",
-        "cost",
-        "unit"
-      ]
+      "required": ["id", "name", "cost", "packageSize", "unit"]
     },
     "Recipe": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -40,37 +27,16 @@
       "type": "object",
       "description": "Represents a recipe composed of multiple ingredients and their quantities.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the recipe."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the recipe."
-        },
+        "id": { "type": "string" },
+        "name": { "type": "string" },
         "items": {
           "type": "array",
-          "description": "List of recipe items (ingredients, labor, equipment).",
-          "items": {
-            "$ref": "#/entities/RecipeItem"
-          }
+          "items": { "$ref": "#/entities/RecipeItem" }
         },
-        "totalCost": {
-          "type": "number",
-          "description": "The total calculated cost of the recipe."
-        },
-        "suggestedPrice": {
-          "type": "number",
-          "description": "The final suggested selling price for the recipe."
-        }
+        "totalCost": { "type": "number" },
+        "suggestedPrice": { "type": "number" }
       },
-      "required": [
-        "id",
-        "name",
-        "items",
-        "totalCost",
-        "suggestedPrice"
-      ]
+      "required": ["id", "name", "items", "totalCost", "suggestedPrice"]
     },
     "RecipeItem": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -78,105 +44,61 @@
       "description": "Represents a single item within a recipe, which could be an ingredient, labor, or equipment usage.",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "ingredient",
-            "labor",
-            "equipment"
-          ]
-        },
-        "name": {
-          "type": "string"
-        },
-        "quantity": {
-          "type": "number"
-        },
-        "unit": {
-          "type": "string"
-        },
-        "cost": {
-          "type": "number"
-        },
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["ingredient", "labor", "equipment"] },
+        "name": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string" },
+        "cost": { "type": "number" },
         "ingredient": {
           "description": "Full ingredient object, denormalized for direct access.",
           "$ref": "#/entities/Ingredient"
         },
-        "equipmentKey": {
-          "type": "string"
-        }
+        "equipmentKey": { "type": "string" }
       },
-      "required": [
-        "id",
-        "type",
-        "name",
-        "quantity",
-        "unit",
-        "cost"
-      ]
+      "required": ["id", "type", "name", "quantity", "unit", "cost"]
     },
-    "IngredientQuantity": {
+    "Customer": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "IngredientQuantity",
+      "title": "Customer",
+      "description": "Represents a customer of the confectionery business.",
       "type": "object",
-      "description": "Connects ingredients to a recipe and defines the quantity of the ingredient needed.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ingredient quantity."
-        },
-        "ingredientId": {
-          "type": "string",
-          "description": "Reference to Ingredient. (Relationship: Ingredient 1:N IngredientQuantity)"
-        },
-        "recipeId": {
-          "type": "string",
-          "description": "Reference to Recipe. (Relationship: Recipe 1:N IngredientQuantity)"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "Quantity of the ingredient used in the recipe."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cpf": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "instagram": { "type": "string" },
+        "lastOrderDate": { "type": "string", "format": "date-time" },
+        "crmSuggestion": { "type": "string" }
       },
-      "required": [
-        "id",
-        "ingredientId",
-        "recipeId",
-        "quantity"
-      ]
+      "required": ["id", "name"]
     },
-    "ProfitMargin": {
+    "Order": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ProfitMargin",
+      "title": "Order",
+      "description": "Represents a customer order.",
       "type": "object",
-      "description": "Defines the profit margin to be applied to a recipe's cost.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the profit margin."
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "deliveryDate": { "type": "string", "format": "date-time" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "recipe": { "$ref": "#/entities/Recipe" },
+              "quantity": { "type": "number" }
+            }
+          }
         },
-        "recipeId": {
-          "type": "string",
-          "description": "Reference to Recipe. (Relationship: Recipe 1:1 ProfitMargin)"
-        },
-        "marginType": {
-          "type": "string",
-          "description": "Type of margin (percentage or fixed value)."
-        },
-        "marginValue": {
-          "type": "number",
-          "description": "Value of the profit margin."
-        }
+        "total": { "type": "number" },
+        "deliveryStatus": { "type": "string", "enum": ["pending", "delivered", "cancelled"] },
+        "productionStatus": { "type": "string", "enum": ["to_do", "buying_supplies", "producing", "finishing", "ready_for_delivery"] }
       },
-      "required": [
-        "id",
-        "recipeId",
-        "marginType",
-        "marginValue"
-      ]
+      "required": ["id", "customerName", "deliveryDate", "items", "total", "deliveryStatus", "productionStatus"]
     }
   },
   "auth": {
@@ -190,68 +112,31 @@
       {
         "path": "/ingredients/{ingredientId}",
         "definition": {
-          "entityName": "Ingredient",
-          "schema": {
-            "$ref": "#/backend/entities/Ingredient"
-          },
-          "description": "Stores ingredient information, including cost, unit, and supplier. No denormalized authorization data is needed as there are no authorization policies defined.",
-          "params": [
-            {
-              "name": "ingredientId",
-              "description": "Unique identifier for the ingredient."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Ingredient" },
+          "description": "Stores all ingredient data."
         }
       },
       {
         "path": "/recipes/{recipeId}",
         "definition": {
-          "entityName": "Recipe",
-          "schema": {
-            "$ref": "#/backend/entities/Recipe"
-          },
-          "description": "Stores recipe information, including the list of ingredient quantities. No denormalized authorization data is needed as there are no authorization policies defined.",
-          "params": [
-            {
-              "name": "recipeId",
-              "description": "Unique identifier for the recipe."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Recipe" },
+          "description": "Stores all recipe data."
         }
       },
       {
-        "path": "/ingredientQuantities/{ingredientQuantityId}",
+        "path": "/customers/{customerId}",
         "definition": {
-          "entityName": "IngredientQuantity",
-          "schema": {
-            "$ref": "#/backend/entities/IngredientQuantity"
-          },
-          "description": "Connects ingredients to recipes and defines the quantity of each ingredient needed. Includes recipeId for filtering.",
-          "params": [
-            {
-              "name": "ingredientQuantityId",
-              "description": "Unique identifier for the ingredient quantity."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Customer" },
+          "description": "Stores all customer data."
         }
       },
       {
-        "path": "/profitMargins/{profitMarginId}",
+        "path": "/orders/{orderId}",
         "definition": {
-          "entityName": "ProfitMargin",
-          "schema": {
-            "$ref": "#/backend/entities/ProfitMargin"
-          },
-          "description": "Defines the profit margin for a recipe. Includes recipeId for filtering.",
-          "params": [
-            {
-              "name": "profitMarginId",
-              "description": "Unique identifier for the profit margin."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Order" },
+          "description": "Stores all order data."
         }
       }
-    ],
-    "reasoning": "The Firestore data structure is designed to support SweetPrice's core features, focusing on ingredient registration, recipe building, profit margin definition, and suggested selling price calculation. The design prioritizes Authorization Independence and QAPs (Rules are not Filters) to ensure security and scalability.\n\n*   **Authorization Independence:** There's no direct user ownership required in the provided data model. Instead, data access can be managed using other strategies (e.g., allowing anyone to create/read recipes and ingredients). If user-specific data isolation were needed (e.g., private recipes), a `users/{userId}/recipes/{recipeId}` structure with path-based rules and denormalized `userId` into the `Recipe` documents would be appropriate. Similarly, a `users/{userId}/ingredients/{ingredientId}` path could secure user-specific ingredients.\n*   **QAPs (Rules are not Filters):** The segregation of data into distinct collections (e.g., `ingredients`, `recipes`, `ingredientQuantities`, `profitMargins`) ensures that list operations can be secured effectively. Each collection can have specific security rules applied without affecting other collections.\n*   **Data Modeling:** The `IngredientQuantity` subcollection establishes the relationship between the ingredients and the recipes. Every `IngredientQuantity` document will contain the `recipeId` to enable listing of all the ingredients from one recipe.\n*   **Global data:** The structure is designed to let users view all information in the app. If this changes, a new approach will be needed.\n\nIf roles or user specific permissions are introduced, a `members` map will be needed."
+    ]
   }
 }

@@ -1,7 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Controller } from 'react-hook-form';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Plus } from 'lucide-react';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 import CustomerList from '@/components/app/customer-list';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +17,10 @@ import { Input } from '@/components/ui/input';
 import { InputMask } from '@/components/ui/input-mask';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const customerFormSchema = z.object({
     name: z.string().min(2, 'Nome é obrigatório.'),
@@ -28,9 +34,12 @@ type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 
 export default function CustomersPage() {
-    const [customers, setCustomers] = useState<Customer[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
+    const firestore = useFirestore();
+    
+    const customersCollection = useMemoFirebase(() => collection(firestore, 'customers'), [firestore]);
+    const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersCollection);
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(customerFormSchema),
@@ -43,28 +52,13 @@ export default function CustomersPage() {
         }
     });
 
-    useEffect(() => {
-        try {
-            const storedCustomers = localStorage.getItem('customers');
-            if (storedCustomers) {
-                setCustomers(JSON.parse(storedCustomers));
-            }
-        } catch (error) {
-            console.error("Failed to load customers from localStorage", error);
-        }
-    }, []);
-
-    const updateCustomers = (newCustomers: Customer[]) => {
-        setCustomers(newCustomers);
-        localStorage.setItem('customers', JSON.stringify(newCustomers));
-    }
-
     const handleAddCustomer = (data: CustomerFormValues) => {
+        const docRef = doc(customersCollection);
         const newCustomer: Customer = {
-            id: new Date().toISOString(),
+            id: docRef.id,
             ...data
         };
-        updateCustomers([...customers, newCustomer]);
+        setDocumentNonBlocking(docRef, newCustomer, { merge: true });
         toast({
             title: 'Cliente Adicionado!',
             description: `${data.name} agora está na sua lista de clientes.`
@@ -72,6 +66,15 @@ export default function CustomersPage() {
         form.reset();
         setIsDialogOpen(false);
     }
+    
+    const handleDeleteCustomer = (customerId: string) => {
+        const docRef = doc(customersCollection, customerId);
+        deleteDocumentNonBlocking(docRef);
+        toast({
+            title: 'Cliente Removido',
+            description: 'O cliente foi removido da sua lista.'
+        });
+    };
 
 
     return (
@@ -133,7 +136,19 @@ export default function CustomersPage() {
                         </Dialog>
                     </CardHeader>
                     <CardContent>
-                       <CustomerList customers={customers} setCustomers={updateCustomers} />
+                        {isLoadingCustomers ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[...Array(3)].map((_, i) => (
+                                    <Card key={i}>
+                                        <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
+                                        <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+                                        <CardFooter><Skeleton className="h-10 w-full" /></CardFooter>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                           <CustomerList customers={customers} onDeleteCustomer={handleDeleteCustomer} />
+                        )}
                     </CardContent>
                 </Card>
         </div>

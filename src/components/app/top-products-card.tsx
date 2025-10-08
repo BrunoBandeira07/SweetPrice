@@ -23,7 +23,7 @@ export default function TopProductsCard({ orders }: TopProductsCardProps) {
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
-        const monthlyOrders = orders.filter(o => {
+        const monthlyOrders = (orders || []).filter(o => {
             const orderDate = new Date(o.deliveryDate);
             return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
         });

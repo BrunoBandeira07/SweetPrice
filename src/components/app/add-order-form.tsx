@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import type { Order, Recipe } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useMemo } from 'react';
 
 const orderFormSchema = z.object({
   customerName: z.string().min(2, 'Nome do cliente é obrigatório.'),
@@ -31,22 +31,11 @@ type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 interface AddOrderFormProps {
     onAddOrder: (order: Omit<Order, 'id' | 'deliveryStatus' | 'productionStatus'>) => void;
+    recipes: Recipe[];
 }
 
-export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
-    const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
+export default function AddOrderForm({ onAddOrder, recipes }: AddOrderFormProps) {
     const { toast } = useToast();
-
-    useEffect(() => {
-        try {
-            const storedRecipes = localStorage.getItem('savedRecipes');
-            if (storedRecipes) {
-                setSavedRecipes(JSON.parse(storedRecipes));
-            }
-        } catch (error) {
-            console.error("Failed to load recipes from localStorage", error);
-        }
-    }, []);
 
     const form = useForm<OrderFormValues>({
         resolver: zodResolver(orderFormSchema),
@@ -63,15 +52,15 @@ export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
     });
 
     const watchedItems = watch('items');
-    const total = watchedItems.reduce((acc, currentItem) => {
-        const recipe = savedRecipes.find(r => r.id === currentItem.recipeId);
+    const total = useMemo(() => watchedItems.reduce((acc, currentItem) => {
+        const recipe = recipes.find(r => r.id === currentItem.recipeId);
         return acc + (recipe?.suggestedPrice || 0) * currentItem.quantity;
-    }, 0);
+    }, 0), [watchedItems, recipes]);
 
 
     const onSubmit = (data: OrderFormValues) => {
         const orderItems = data.items.map(item => {
-            const recipe = savedRecipes.find(r => r.id === item.recipeId);
+            const recipe = recipes.find(r => r.id === item.recipeId);
             if (!recipe) throw new Error("Receita não encontrada");
             return { recipe, quantity: item.quantity };
         });
@@ -152,7 +141,7 @@ export default function AddOrderForm({ onAddOrder }: AddOrderFormProps) {
                                                     <SelectValue placeholder="Selecione a receita" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {savedRecipes.map(recipe => (
+                                                    {recipes.map(recipe => (
                                                         <SelectItem key={recipe.id} value={recipe.id}>{recipe.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
