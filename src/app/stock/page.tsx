@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
@@ -62,9 +61,12 @@ export default function StockPage() {
     setDocumentNonBlocking(docRef, { ...ingredient, expirationDate: date?.toISOString() }, { merge: true });
   };
 
-  const filteredIngredients = ingredients.filter(ing =>
-    ing.name.toLowerCase().includes(filter.toLowerCase())
-  );
+  const filteredIngredients = useMemo(() => {
+    if (!ingredients) return [];
+    return ingredients.filter(ing =>
+      ing.name.toLowerCase().includes(filter.toLowerCase())
+    );
+  }, [ingredients, filter]);
   
   const getStatus = (ingredient: Ingredient) => {
     const { stockQuantity = 0, lowStockThreshold = 0, expirationDate } = ingredient;
@@ -228,5 +230,3 @@ export default function StockPage() {
     </div>
   );
 }
-
-    

@@ -42,11 +42,19 @@ export default function CalculatorPage() {
   
   useEffect(() => {
     const recipeToLoadId = searchParams.get('loadRecipe');
-    if (recipeToLoadId && savedRecipes.length > 0) {
+    if (recipeToLoadId && savedRecipes.length > 0 && ingredients.length > 0) {
       try {
           const recipeToLoad = savedRecipes.find(r => r.id === recipeToLoadId);
           if (recipeToLoad) {
-            setRecipeItems(recipeToLoad.items);
+            // Re-hydrate ingredients from the main ingredients list
+            const hydratedItems = recipeToLoad.items.map(item => {
+                if (item.type === 'ingredient' && item.ingredient?.id) {
+                    const fullIngredient = ingredients.find(i => i.id === item.ingredient!.id);
+                    return { ...item, ingredient: fullIngredient };
+                }
+                return item;
+            });
+            setRecipeItems(hydratedItems as RecipeItem[]);
             toast({
               title: `Receita "${recipeToLoad.name}" carregada!`,
               description: 'Os itens foram adicionados à montagem.',
@@ -59,13 +67,13 @@ export default function CalculatorPage() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, savedRecipes, toast]);
+  }, [searchParams, savedRecipes, ingredients]);
 
   const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id' | 'userId'> & { id?: string }) => {
     if (!user || !firestore) return;
     const ingredientsCollection = collection(firestore, 'ingredients');
     const docRef = ingredient.id ? doc(ingredientsCollection, ingredient.id) : doc(ingredientsCollection);
-    const dataToSave: Ingredient = {
+    const dataToSave: Omit<Ingredient, 'id'> & { id: string, userId: string } = {
       ...ingredient,
       id: docRef.id,
       userId: user.uid,
@@ -94,7 +102,7 @@ export default function CalculatorPage() {
     const ingredientsCollection = collection(firestore, 'ingredients');
     importedIngredients.forEach(ing => {
       const docRef = doc(ingredientsCollection);
-      const dataToSave: Ingredient = {
+      const dataToSave: Omit<Ingredient, 'id'> & { id: string, userId: string } = {
         ...ing,
         id: docRef.id,
         userId: user.uid,
@@ -112,7 +120,7 @@ export default function CalculatorPage() {
     if (!user || !firestore) return;
     const recipesCollection = collection(firestore, 'recipes');
     const docRef = recipe.id ? doc(recipesCollection, recipe.id) : doc(recipesCollection);
-    const dataToSave: Recipe = {
+    const dataToSave: Omit<Recipe, 'id'> & { id: string, userId: string } = {
       ...recipe,
       id: docRef.id,
       userId: user.uid,
@@ -162,5 +170,3 @@ export default function CalculatorPage() {
     </div>
   );
 }
-
-    
