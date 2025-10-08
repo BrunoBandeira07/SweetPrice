@@ -1,46 +1,40 @@
 /**
- * @fileoverview Firestore Security Rules for SweetPrice.
+ * @file Firebase Security Rules for SweetPrice application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. Each user has their own
- * private data store, completely isolated from other users.
+ * This ruleset enforces a strict user-ownership model, where each user has exclusive access to their own data stored under their unique user ID.
  *
  * Data Structure:
- * All data is nested under /users/{userId}, ensuring that only the authenticated
- * user can access their own data. This includes both ingredients and recipes.
+ * All data (ingredients and recipes) is nested under /users/{userId}, ensuring clear ownership and simplified security rules.
  *
  * Key Security Decisions:
- * - Data is strictly segregated by user ID in the path.
- * - No public listing of user data is allowed.
- * - Denormalization is not required as the data structure inherently provides
- *   path-based authorization, avoiding the need for get() calls.
+ * - Users can only access their own ingredients and recipes.
+ * - Listing other user's data is disallowed.
+ * - Data validation is relaxed in this prototyping phase, focusing on ownership and relational integrity.
+ *
+ * Denormalization for Authorization:
+ * The data model uses path-based ownership: the user ID is embedded in the path, eliminating the need for additional reads to determine ownership.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Grants access to a user's ingredients collection.
+     * @description Controls access to user-specific ingredient documents.
      * @path /users/{userId}/ingredients/{ingredientId}
-     * @allow (create) - User with ID abc can create a new ingredient with the ingredient's id set to abc under /users/abc/ingredients/ghi if request.auth.uid == 'abc'.
-     * @allow (get) - User abc can get the ingredient with ID ghi if request.auth.uid == 'abc'.
-     * @allow (update) - User abc can update the ingredient with ID ghi if request.auth.uid == 'abc'.
-     * @allow (delete) - User abc can delete the ingredient with ID ghi if request.auth.uid == 'abc'.
-     * @deny (create) - User with ID def cannot create a new ingredient under /users/abc/ingredients/ghi.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list) Authenticated user accessing their own ingredient data.
+     *   Request: { auth: { uid: 'user123' }, method: 'get', path: '/databases/(default)/documents/users/user123/ingredients/ingredient456' }
+     * @allow (create) Authenticated user creating an ingredient under their user ID.
+     *   Request: { auth: { uid: 'user123' }, method: 'create', path: '/databases/(default)/documents/users/user123/ingredients/newIngredient' }
+     * @allow (update, delete) Authenticated user updating or deleting their own ingredient data.
+     *   Request: { auth: { uid: 'user123' }, method: 'update', path: '/databases/(default)/documents/users/user123/ingredients/ingredient456' }
+     * @deny (get, list) Authenticated user attempting to access another user's ingredient data.
+     *   Request: { auth: { uid: 'user456' }, method: 'get', path: '/databases/(default)/documents/users/user123/ingredients/ingredient456' }
+     * @deny (create, update, delete) Unauthenticated user attempting to modify any ingredient data.
+     *   Request: { auth: null, method: 'create', path: '/databases/(default)/documents/users/user123/ingredients/newIngredient' }
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/ingredients/{ingredientId} {
-      // Helper function to check if the user is signed in and is the owner of the document.
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
@@ -49,32 +43,51 @@ service cloud.firestore {
     }
 
     /**
-     * @description Grants access to a user's recipes collection.
+     * @description Controls access to user-specific recipe documents.
      * @path /users/{userId}/recipes/{recipeId}
-     * @allow (create) - User with ID abc can create a new recipe with the recipe's id set to abc under /users/abc/recipes/ghi if request.auth.uid == 'abc'.
-     * @allow (get) - User abc can get the recipe with ID ghi if request.auth.uid == 'abc'.
-     * @allow (update) - User abc can update the recipe with ID ghi if request.auth.uid == 'abc'.
-     * @allow (delete) - User abc can delete the recipe with ID ghi if request.auth.uid == 'abc'.
-     * @deny (create) - User with ID def cannot create a new recipe under /users/abc/recipes/ghi.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list) Authenticated user accessing their own recipe data.
+     *   Request: { auth: { uid: 'user123' }, method: 'get', path: '/databases/(default)/documents/users/user123/recipes/recipe456' }
+     * @allow (create) Authenticated user creating a recipe under their user ID.
+     *   Request: { auth: { uid: 'user123' }, method: 'create', path: '/databases/(default)/documents/users/user123/recipes/newRecipe' }
+     * @allow (update, delete) Authenticated user updating or deleting their own recipe data.
+     *   Request: { auth: { uid: 'user123' }, method: 'update', path: '/databases/(default)/documents/users/user123/recipes/recipe456' }
+     * @deny (get, list) Authenticated user attempting to access another user's recipe data.
+     *   Request: { auth: { uid: 'user456' }, method: 'get', path: '/databases/(default)/documents/users/user123/recipes/recipe456' }
+     * @deny (create, update, delete) Unauthenticated user attempting to modify any recipe data.
+     *   Request: { auth: null, method: 'create', path: '/databases/(default)/documents/users/user123/recipes/newRecipe' }
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId}/recipes/{recipeId} {
-      // Helper function to check if the user is signed in and is the owner of the document.
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
       allow update: if isSignedIn() && isExistingOwner(userId);
       allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+    
+    /**
+     * @description Controls access to user-specific settings documents.
+     * @path /users/{userId}/settings/{settingId}
+     */
+    match /users/{userId}/settings/{settingId} {
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
     }
   }
 }
