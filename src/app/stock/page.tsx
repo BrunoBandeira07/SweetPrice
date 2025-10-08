@@ -1,8 +1,14 @@
+
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -12,7 +18,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Archive, CalendarIcon, Plus, Minus, AlertCircle, CheckCircle } from 'lucide-react';
 import type { Ingredient } from '@/lib/types';
-import { INITIAL_INGREDIENTS } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
@@ -25,53 +30,32 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StockPage() {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [filter, setFilter] = useState('');
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    try {
-      const storedIngredients = localStorage.getItem('ingredients');
-      if (storedIngredients) {
-        setIngredients(JSON.parse(storedIngredients));
-      } else {
-        setIngredients(INITIAL_INGREDIENTS);
-      }
-    } catch (error) {
-      console.error("Failed to load ingredients from localStorage", error);
-      setIngredients(INITIAL_INGREDIENTS);
-    }
-  }, []);
+  const ingredientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'ingredients') : null, [firestore, user]);
+  const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
 
-  const updateIngredients = (newIngredients: Ingredient[]) => {
-    setIngredients(newIngredients);
-    localStorage.setItem('ingredients', JSON.stringify(newIngredients));
-  };
-
-  const handleStockChange = (ingredientId: string, amount: number) => {
-    const newIngredients = ingredients.map(ing => {
-      if (ing.id === ingredientId) {
-        return { ...ing, stockQuantity: Math.max(0, (ing.stockQuantity || 0) + amount) };
-      }
-      return ing;
-    });
-    updateIngredients(newIngredients);
+  const handleStockChange = (ingredient: Ingredient, amount: number) => {
+    if (!ingredientsCollection) return;
+    const newQuantity = Math.max(0, (ingredient.stockQuantity || 0) + amount);
+    const docRef = doc(ingredientsCollection, ingredient.id);
+    setDocumentNonBlocking(docRef, { ...ingredient, stockQuantity: newQuantity }, { merge: true });
     toast({
         title: "Estoque Atualizado!",
-        description: `O estoque de ${newIngredients.find(i=> i.id === ingredientId)?.name} foi ajustado.`
+        description: `O estoque de ${ingredient.name} foi ajustado.`
     })
   };
 
-  const handleDateChange = (ingredientId: string, date: Date | undefined) => {
-    const newIngredients = ingredients.map(ing => {
-      if (ing.id === ingredientId) {
-        return { ...ing, expirationDate: date?.toISOString() };
-      }
-      return ing;
-    });
-    updateIngredients(newIngredients);
+  const handleDateChange = (ingredient: Ingredient, date: Date | undefined) => {
+    if (!ingredientsCollection) return;
+    const docRef = doc(ingredientsCollection, ingredient.id);
+    setDocumentNonBlocking(docRef, { ...ingredient, expirationDate: date?.toISOString() }, { merge: true });
   };
 
   const filteredIngredients = ingredients.filter(ing =>
@@ -82,11 +66,11 @@ export default function StockPage() {
     const { stockQuantity = 0, lowStockThreshold = 0, expirationDate } = ingredient;
     const now = new Date();
     const expiry = expirationDate ? new Date(expirationDate) : null;
-    const sevenDaysFromNow = new Date(now.setDate(now.getDate() + 7));
+    const sevenDaysFromNow = new Date(new Date().setDate(new Date().getDate() + 7));
     
     if (expiry && expiry < new Date()) return { label: 'Vencido', color: 'destructive', icon: AlertCircle };
     if (stockQuantity <= 0) return { label: 'Sem Estoque', color: 'destructive', icon: AlertCircle };
-    if (stockQuantity <= lowStockThreshold) return { label: 'Estoque Baixo', color: 'accent', icon: AlertCircle };
+    if (lowStockThreshold > 0 && stockQuantity <= lowStockThreshold) return { label: 'Estoque Baixo', color: 'accent', icon: AlertCircle };
     if (expiry && expiry <= sevenDaysFromNow) return { label: 'Vence em Breve', color: 'accent', icon: AlertCircle };
 
     return { label: 'Em Estoque', color: 'default', icon: CheckCircle };
@@ -96,11 +80,11 @@ export default function StockPage() {
     const [amount, setAmount] = useState(0);
 
     const handleSubmit = () => {
-        handleStockChange(ingredient.id, type === 'in' ? amount : -amount);
+        handleStockChange(ingredient, type === 'in' ? amount : -amount);
     }
     
     return (
-        <Dialog>
+        <Dialog onOpenChange={(open) => !open && setAmount(0)}>
             <DialogTrigger asChild>
                 <Button variant={type === 'in' ? 'outline' : 'destructive'} size="icon">
                     {type === 'in' ? <Plus/> : <Minus/>}
@@ -115,14 +99,14 @@ export default function StockPage() {
                 </DialogHeader>
                 <div className="space-y-2">
                     <label htmlFor="amount">Quantidade ({ingredient.unit})</label>
-                    <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                    <Input id="amount" type="number" value={amount === 0 ? '' : amount} onChange={(e) => setAmount(Number(e.target.value))} />
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
                         <Button variant="secondary">Cancelar</Button>
                     </DialogClose>
                      <DialogClose asChild>
-                        <Button onClick={handleSubmit}>Confirmar</Button>
+                        <Button onClick={handleSubmit} disabled={amount <= 0}>Confirmar</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>
@@ -163,7 +147,15 @@ export default function StockPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredIngredients.map(ingredient => {
+                  {isLoadingIngredients ? (
+                     [...Array(5)].map((_, i) => (
+                        <TableRow key={i}>
+                           <TableCell colSpan={5}>
+                              <Skeleton className="h-8 w-full"/>
+                           </TableCell>
+                        </TableRow>
+                     ))
+                  ) : filteredIngredients.map(ingredient => {
                      const status = getStatus(ingredient);
                      return (
                         <TableRow key={ingredient.id}>
@@ -191,7 +183,7 @@ export default function StockPage() {
                                     <Calendar
                                     mode="single"
                                     selected={ingredient.expirationDate ? new Date(ingredient.expirationDate) : undefined}
-                                    onSelect={(date) => handleDateChange(ingredient.id, date)}
+                                    onSelect={(date) => handleDateChange(ingredient, date)}
                                     initialFocus
                                     />
                                 </PopoverContent>
@@ -201,9 +193,9 @@ export default function StockPage() {
                                 <Badge 
                                     variant={status.color as any} 
                                     className={cn('flex items-center gap-1 w-fit', {
-                                        'bg-red-100 text-red-800 border-red-300': status.color === 'destructive',
-                                        'bg-yellow-100 text-yellow-800 border-yellow-300': status.color === 'accent',
-                                        'bg-green-100 text-green-800 border-green-300': status.color === 'default',
+                                        'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700': status.color === 'destructive',
+                                        'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700': status.color === 'accent',
+                                        'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700': status.color === 'default',
                                     })}
                                 >
                                     <status.icon className="h-3 w-3"/>
@@ -222,9 +214,9 @@ export default function StockPage() {
                 </TableBody>
               </Table>
             </div>
-            {filteredIngredients.length === 0 && (
+            {!isLoadingIngredients && filteredIngredients.length === 0 && (
                 <div className="text-center py-16">
-                    <p className="text-muted-foreground">Nenhum ingrediente encontrado com este filtro.</p>
+                    <p className="text-muted-foreground">Nenhum ingrediente encontrado.</p>
                 </div>
             )}
           </CardContent>
@@ -232,3 +224,5 @@ export default function StockPage() {
     </div>
   );
 }
+
+    
