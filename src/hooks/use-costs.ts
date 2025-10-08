@@ -2,6 +2,9 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import { z } from 'zod';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 const customExpenseSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -35,18 +38,11 @@ type Equipment = { label: string; value: number | undefined, unit: 'Watts' | 'kg
 type Equipments = Record<string, Equipment>;
 
 export const useCosts = () => {
-    const [costs, setCosts] = useState<CostsFormValues>({});
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'settings', 'costs') : null, [firestore, user]);
+    const { data: costs = {} } = useDoc<CostsFormValues>(settingsDocRef);
 
-    useEffect(() => {
-        try {
-            const savedCosts = localStorage.getItem('appCosts');
-            if (savedCosts) {
-                setCosts(JSON.parse(savedCosts));
-            }
-        } catch (error) {
-            console.error("Failed to load costs from localStorage", error);
-        }
-    }, []);
 
     const electricEquipments: Equipments = useMemo(() => ({
         microwavePower: { label: 'Micro-ondas', value: costs.microwavePower, unit: 'Watts' },

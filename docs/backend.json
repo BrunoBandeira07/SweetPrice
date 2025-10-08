@@ -127,6 +127,42 @@
         "completed": { "type": "boolean" }
       },
       "required": ["id", "text", "completed"]
+    },
+    "UserSettings": {
+      "title": "User Settings",
+      "description": "Stores general user-specific settings, including costs and goals.",
+      "type": "object",
+      "properties": {
+        "monthlyGoal": { "type": "number" },
+        "kwhPrice": { "type": "number" },
+        "gasCylinderSize": { "type": "string", "enum": ["8", "10", "13"] },
+        "gasCylinderPrice": { "type": "number" },
+        "proLabore": { "type": "number" },
+        "creditCardFee": { "type": "number" },
+        "indirectCostsRate": { "type": "number" },
+        "taxRate": { "type": "number" },
+        "microwavePower": { "type": "number" },
+        "blenderPower": { "type": "number" },
+        "mixerPower": { "type": "number" },
+        "electricOvenPower": { "type": "number" },
+        "brigadeiroPanPower": { "type": "number" },
+        "fryerPower": { "type": "number" },
+        "gasFryerFlow": { "type": "number" },
+        "stoveBurnerFlow": { "type": "number" },
+        "gasOvenFlow": { "type": "number" },
+        "customExpenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "value": { "type": "number" },
+              "unit": { "type": "string" }
+            },
+            "required": ["name", "value", "unit"]
+          }
+        }
+      }
     }
   },
   "auth": {
@@ -154,6 +190,10 @@
     "/users/{userId}/campaigns/{campaignId}": {
       "schema": { "$ref": "#/entities/Campaign" },
       "description": "Stores all campaign data for a specific user."
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "Stores user-specific settings documents, like 'costs' or 'general'."
     }
   }
 }

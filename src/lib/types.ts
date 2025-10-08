@@ -84,3 +84,25 @@ export interface Campaign {
     endDate: string; // ISO String
     tasks: CampaignTask[];
 }
+
+export interface UserSettings {
+    monthlyGoal?: number;
+    // Costs
+    kwhPrice?: number;
+    gasCylinderSize?: '8' | '10' | '13';
+    gasCylinderPrice?: number;
+    proLabore?: number;
+    creditCardFee?: number;
+    indirectCostsRate?: number;
+    taxRate?: number;
+    microwavePower?: number;
+    blenderPower?: number;
+    mixerPower?: number;
+    electricOvenPower?: number;
+    brigadeiroPanPower?: number;
+    fryerPower?: number;
+    gasFryerFlow?: number;
+    stoveBurnerFlow?: number;
+    gasOvenFlow?: number;
+    customExpenses?: { name: string; value: number; unit: string }[];
+}

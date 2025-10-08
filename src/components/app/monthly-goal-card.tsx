@@ -2,39 +2,51 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Progress } from '../ui/progress';
 import { Check, Edit, Save, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { doc } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface MonthlyGoalCardProps {
     currentSales: number;
 }
 
 export default function MonthlyGoalCard({ currentSales }: MonthlyGoalCardProps) {
+    const { toast } = useToast();
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'settings', 'general') : null, [firestore, user]);
+    const { data: settings } = useDoc<{ monthlyGoal?: number }>(settingsDocRef);
+    
     const [goal, setGoal] = useState(1000);
     const [isEditing, setIsEditing] = useState(false);
     const [tempGoal, setTempGoal] = useState(goal);
-    const { toast } = useToast();
 
     useEffect(() => {
-        const savedGoal = localStorage.getItem('monthlyGoal');
+        const savedGoal = settings?.monthlyGoal;
         if (savedGoal) {
-            const parsedGoal = parseFloat(savedGoal);
-            setGoal(parsedGoal);
-            setTempGoal(parsedGoal);
+            setGoal(savedGoal);
+            setTempGoal(savedGoal);
         }
-    }, []);
+    }, [settings]);
 
-    const progress = (currentSales / goal) * 100;
+    const progress = goal > 0 ? (currentSales / goal) * 100 : 0;
     const goalMet = currentSales >= goal;
 
     const handleSave = () => {
+        if (!settingsDocRef) return;
+        
+        setDocumentNonBlocking(settingsDocRef, { monthlyGoal: tempGoal }, { merge: true });
         setGoal(tempGoal);
-        localStorage.setItem('monthlyGoal', tempGoal.toString());
         setIsEditing(false);
+
         toast({
             title: "Meta Atualizada!",
             description: "Sua meta de vendas para o mês foi definida.",
@@ -71,7 +83,7 @@ export default function MonthlyGoalCard({ currentSales }: MonthlyGoalCardProps) 
                     </div>
                 ) : (
                     <div>
-                        {goalMet ? (
+                        {goalMet && goal > 0 ? (
                              <div className="flex flex-col items-center justify-center text-center p-4 bg-green-100 dark:bg-green-900/30 rounded-lg">
                                 <Check className="h-8 w-8 text-green-600 mb-2"/>
                                 <p className="font-bold text-green-700 dark:text-green-300">Meta Alcançada!</p>

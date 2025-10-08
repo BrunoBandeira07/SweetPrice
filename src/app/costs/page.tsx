@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,11 @@ import { Settings, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { doc } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Skeleton } from '../ui/skeleton';
 
 const customExpenseSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -62,6 +67,11 @@ const fieldLabels: Record<keyof Omit<CostsFormValues, 'customExpenses' | 'gasCyl
 
 export default function CostsPage() {
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const settingsDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'settings', 'costs') : null, [firestore, user]);
+  const { data: savedCosts, isLoading } = useDoc<CostsFormValues>(settingsDocRef);
+  
   const form = useForm<CostsFormValues>({
     resolver: zodResolver(costsFormSchema),
     defaultValues: {
@@ -76,32 +86,37 @@ export default function CostsPage() {
   });
 
   useEffect(() => {
-    try {
-      const savedCosts = localStorage.getItem('appCosts');
-      if (savedCosts) {
-        reset(JSON.parse(savedCosts));
-      }
-    } catch (error) {
-      console.error("Failed to load costs from localStorage", error);
+    if (savedCosts) {
+      reset(savedCosts);
     }
-  }, [reset]);
+  }, [savedCosts, reset]);
 
   const onSubmit = (data: CostsFormValues) => {
-    try {
-      localStorage.setItem('appCosts', JSON.stringify(data));
-      toast({
-        title: 'Custos Salvos!',
-        description: 'Suas informações de custos foram salvas com sucesso.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao Salvar',
-        description: 'Não foi possível salvar os dados.',
-      });
-      console.error("Failed to save costs to localStorage", error);
-    }
+    if (!settingsDocRef) return;
+    setDocumentNonBlocking(settingsDocRef, data, { merge: true });
+    toast({
+      title: 'Custos Salvos!',
+      description: 'Suas informações de custos foram salvas com sucesso na nuvem.',
+    });
   };
+  
+  if (isLoading) {
+      return (
+          <div className="w-full">
+            <Card>
+                <CardHeader>
+                  <Skeleton className="h-8 w-1/3" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                </CardContent>
+            </Card>
+          </div>
+      )
+  }
 
   return (
     <div className="w-full">
