@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -30,10 +31,16 @@ export default function QuotesPage() {
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const customersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'customers') : null, [firestore, user]);
+    const customersCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'customers');
+    }, [firestore, user]);
     const { data: customers = [] } = useCollection<Customer>(customersCollection);
 
-    const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
+    const recipesCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'recipes');
+    }, [firestore, user]);
     const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
 
     const [quote, setQuote] = useState<Quote>({

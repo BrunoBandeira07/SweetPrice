@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -32,7 +33,10 @@ export default function RecipesPage() {
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
+    const recipesCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'recipes');
+    }, [firestore, user]);
     const { data: recipes = [], isLoading: isLoadingRecipes } = useCollection<Recipe>(recipesCollection);
 
     const handleDeleteRecipe = (recipeId: string) => {

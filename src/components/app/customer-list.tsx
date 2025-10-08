@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,7 +25,10 @@ export default function CustomerList({ customers, onDeleteCustomer }: CustomerLi
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const ordersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'orders') : null, [firestore, user]);
+    const ordersCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'orders');
+    }, [firestore, user]);
     const { data: allOrders = [] } = useCollection<Order>(ordersCollection);
 
     const handleGenerateSuggestion = async (customer: Customer) => {

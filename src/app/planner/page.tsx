@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -368,7 +369,10 @@ export default function PlannerPage() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const campaignsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'campaigns') : null, [firestore, user]);
+    const campaignsCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'campaigns');
+    }, [firestore, user]);
     const { data: campaigns = [], isLoading: isLoadingCampaigns } = useCollection<Campaign>(campaignsCollection);
 
     const handleSaveCampaign = (campaignData: Omit<Campaign, 'id'> & { id?: string }) => {

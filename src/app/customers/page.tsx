@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -39,7 +40,10 @@ export default function CustomersPage() {
     const firestore = useFirestore();
     const { user } = useUser();
     
-    const customersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'customers') : null, [firestore, user]);
+    const customersCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'customers');
+    }, [firestore, user]);
     const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersCollection);
 
     const form = useForm<CustomerFormValues>({

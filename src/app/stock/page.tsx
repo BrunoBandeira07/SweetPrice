@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -38,7 +39,10 @@ export default function StockPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const ingredientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'ingredients') : null, [firestore, user]);
+  const ingredientsCollection = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'ingredients');
+  }, [firestore, user]);
   const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
 
   const handleStockChange = (ingredient: Ingredient, amount: number) => {

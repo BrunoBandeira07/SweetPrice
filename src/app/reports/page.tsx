@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo } from 'react';
@@ -28,10 +29,16 @@ export default function ReportsPage() {
     const firestore = useFirestore();
     const { user } = useUser();
 
-    const ordersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'orders') : null, [firestore, user]);
+    const ordersCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'orders');
+    }, [firestore, user]);
     const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
     
-    const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
+    const recipesCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'recipes');
+    }, [firestore, user]);
     const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
 
     const deliveredOrders = useMemo(() => (orders || []).filter(o => o.deliveryStatus === 'delivered'), [orders]);

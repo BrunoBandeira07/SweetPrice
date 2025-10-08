@@ -36,13 +36,22 @@ export default function DashboardPage() {
     const firestore = useFirestore();
     const { user } = useUser();
     
-    const ordersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'orders') : null, [firestore, user]);
+    const ordersCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'orders');
+    }, [firestore, user]);
     const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersCollection);
 
-    const customersCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'customers') : null, [firestore, user]);
+    const customersCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'customers');
+    }, [firestore, user]);
     const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersCollection);
 
-    const ingredientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'ingredients') : null, [firestore, user]);
+    const ingredientsCollection = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'ingredients');
+    }, [firestore, user]);
     const { data: ingredients, isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
 
     const monthlySales = useMemo(() => {

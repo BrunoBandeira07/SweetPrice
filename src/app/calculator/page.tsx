@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -21,10 +22,16 @@ export default function CalculatorPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const ingredientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'ingredients') : null, [firestore, user]);
+  const ingredientsCollection = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'ingredients');
+  }, [firestore, user]);
   const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
   
-  const recipesCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'recipes') : null, [firestore, user]);
+  const recipesCollection = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'recipes');
+  }, [firestore, user]);
   const { data: savedRecipes = [] } = useCollection<Recipe>(recipesCollection);
 
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
