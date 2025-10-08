@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Order } from '@/lib/types';
@@ -14,13 +14,7 @@ interface UpcomingEventsProps {
 }
 
 export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
-    const [date, setDate] = useState<Date | undefined>();
     const { toast } = useToast();
-
-    useEffect(() => {
-        // This ensures the date is only set on the client-side after hydration
-        setDate(new Date());
-    }, []);
 
     const handleDayClick = (day: Date) => {
         const ordersOnDay = (orders || []).filter(o => 
@@ -49,11 +43,9 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center p-0">
-                {date ? (
+                
                     <Calendar
                         mode="single"
-                        selected={date}
-                        onSelect={setDate}
                         onDayClick={handleDayClick}
                         className="rounded-md"
                         modifiers={{
@@ -65,11 +57,7 @@ export default function UpcomingEvents({ orders }: UpcomingEventsProps) {
                            deliveryDay: 'bg-primary text-primary-foreground rounded-full',
                         }}
                     />
-                ) : (
-                    <div className="p-3">
-                        <Skeleton className="w-[280px] h-[330px]" />
-                    </div>
-                )}
+               
             </CardContent>
         </Card>
     );
