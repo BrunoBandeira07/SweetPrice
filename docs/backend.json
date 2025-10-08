@@ -4,196 +4,125 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Ingredient",
       "type": "object",
-      "description": "Represents an ingredient used in recipes, including cost, quantity, and supplier information.",
+      "description": "Represents an ingredient used in recipes, including cost and supplier information.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "cost": { "type": "number" },
-        "packageSize": { "type": "number" },
-        "unit": { "type": "string", "enum": ["g", "kg", "ml", "l", "un"] },
-        "supplier": { "type": "string" },
-        "category": { "type": "string" },
-        "unitCost": { "type": "number" },
-        "lossFactor": { "type": "number" },
-        "stockQuantity": { "type": "number" },
-        "lowStockThreshold": { "type": "number" },
-        "expirationDate": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ingredient."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the ingredient."
+        },
+        "cost": {
+          "type": "number",
+          "description": "Purchase cost of the ingredient per unit."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement for the ingredient (e.g., kg, g, ml, piece)."
+        },
+        "supplier": {
+          "type": "string",
+          "description": "Name of the supplier for the ingredient."
+        }
       },
-      "required": ["id", "name", "cost", "packageSize", "unit"]
+      "required": [
+        "id",
+        "name",
+        "cost",
+        "unit",
+        "supplier"
+      ]
     },
     "Recipe": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Recipe",
       "type": "object",
-      "description": "Represents a recipe composed of multiple ingredients and their quantities.",
+      "description": "Represents a recipe, combining ingredients and defining profit margins to calculate selling price.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "items": {
-          "type": "array",
-          "items": { "$ref": "#/entities/RecipeItem" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the recipe."
         },
-        "totalCost": { "type": "number" },
-        "suggestedPrice": { "type": "number" }
-      },
-      "required": ["id", "name", "items"]
-    },
-    "RecipeItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "RecipeItem",
-      "description": "Represents a single item within a recipe, which could be an ingredient, labor, or equipment usage.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["ingredient", "labor", "equipment"] },
-        "name": { "type": "string" },
-        "quantity": { "type": "number" },
-        "unit": { "type": "string" },
-        "cost": { "type": "number" },
-        "ingredient": {
-          "description": "Full ingredient object, denormalized for direct access.",
-          "$ref": "#/entities/Ingredient"
+        "name": {
+          "type": "string",
+          "description": "Name of the recipe."
         },
-        "equipmentKey": { "type": "string" }
-      },
-      "required": ["id", "type", "name", "quantity", "unit", "cost"]
-    },
-    "Customer": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Customer",
-      "description": "Represents a customer of the confectionery business.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "cpf": { "type": "string" },
-        "address": { "type": "string" },
-        "phone": { "type": "string" },
-        "instagram": { "type": "string" },
-        "lastOrderDate": { "type": "string", "format": "date-time" },
-        "crmSuggestion": { "type": "string" }
-      },
-      "required": ["id", "name"]
-    },
-    "Order": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Order",
-      "description": "Represents a customer order.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "customerName": { "type": "string" },
-        "deliveryDate": { "type": "string", "format": "date-time" },
-        "items": {
+        "ingredientIds": {
           "type": "array",
+          "description": "References to Ingredients. (Relationship: Recipe 1:N Ingredient)",
           "items": {
-            "type": "object",
-            "properties": {
-              "recipe": { "$ref": "#/entities/Recipe" },
-              "quantity": { "type": "number" }
-            }
+            "type": "string"
           }
         },
-        "total": { "type": "number" },
-        "deliveryStatus": { "type": "string", "enum": ["pending", "delivered", "cancelled"] },
-        "productionStatus": { "type": "string", "enum": ["to_do", "buying_supplies", "producing", "finishing", "ready_for_delivery"] }
-      },
-      "required": ["id", "customerName", "deliveryDate", "items", "total", "deliveryStatus", "productionStatus"]
-    },
-    "Campaign": {
-      "title": "Campaign",
-      "description": "Represents a marketing campaign with tasks and a schedule.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "status": { "type": "string", "enum": ["planning", "in_progress", "completed", "archived"] },
-        "startDate": { "type": "string", "format": "date-time" },
-        "endDate": { "type": "string", "format": "date-time" },
-        "tasks": {
-          "type": "array",
-          "items": { "$ref": "#/entities/CampaignTask" }
+        "profitMargin": {
+          "type": "number",
+          "description": "Profit margin to be applied to the total cost of the recipe (percentage or fixed value)."
+        },
+        "sellingPrice": {
+          "type": "number",
+          "description": "Automatically calculated selling price based on ingredient costs and profit margin."
         }
       },
-      "required": ["id", "name", "status", "startDate", "endDate"]
-    },
-    "CampaignTask": {
-      "title": "Campaign Task",
-      "description": "A single task within a marketing campaign.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "text": { "type": "string" },
-        "completed": { "type": "boolean" }
-      },
-      "required": ["id", "text", "completed"]
-    },
-    "UserSettings": {
-      "title": "User Settings",
-      "description": "Stores general user-specific settings, including costs and goals.",
-      "type": "object",
-      "properties": {
-        "monthlyGoal": { "type": "number" },
-        "kwhPrice": { "type": "number" },
-        "gasCylinderSize": { "type": "string", "enum": ["8", "10", "13"] },
-        "gasCylinderPrice": { "type": "number" },
-        "proLabore": { "type": "number" },
-        "creditCardFee": { "type": "number" },
-        "indirectCostsRate": { "type": "number" },
-        "taxRate": { "type": "number" },
-        "microwavePower": { "type": "number" },
-        "blenderPower": { "type": "number" },
-        "mixerPower": { "type": "number" },
-        "electricOvenPower": { "type": "number" },
-        "brigadeiroPanPower": { "type": "number" },
-        "fryerPower": { "type": "number" },
-        "gasFryerFlow": { "type": "number" },
-        "stoveBurnerFlow": { "type": "number" },
-        "gasOvenFlow": { "type": "number" },
-        "customExpenses": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string" },
-              "value": { "type": "number" },
-              "unit": { "type": "string" }
-            },
-            "required": ["name", "value", "unit"]
-          }
-        }
-      }
+      "required": [
+        "id",
+        "name",
+        "ingredientIds",
+        "profitMargin",
+        "sellingPrice"
+      ]
     }
   },
   "auth": {
     "providers": [
+      "password",
       "anonymous"
     ]
   },
   "firestore": {
-    "/users/{userId}/ingredients/{ingredientId}": {
-      "schema": { "$ref": "#/entities/Ingredient" },
-      "description": "Stores all ingredient data for a specific user."
-    },
-    "/users/{userId}/recipes/{recipeId}": {
-      "schema": { "$ref": "#/entities/Recipe" },
-      "description": "Stores all recipe data for a specific user."
-    },
-    "/users/{userId}/customers/{customerId}": {
-      "schema": { "$ref": "#/entities/Customer" },
-      "description": "Stores all customer data for a specific user."
-    },
-    "/users/{userId}/orders/{orderId}": {
-      "schema": { "$ref": "#/entities/Order" },
-      "description": "Stores all order data for a specific user."
-    },
-    "/users/{userId}/campaigns/{campaignId}": {
-      "schema": { "$ref": "#/entities/Campaign" },
-      "description": "Stores all campaign data for a specific user."
-    },
-    "/users/{userId}/settings/{settingId}": {
-      "schema": { "$ref": "#/entities/UserSettings" },
-      "description": "Stores user-specific settings documents, like 'costs' or 'general'."
-    }
+    "structure": [
+      {
+        "path": "/users/{userId}/ingredients/{ingredientId}",
+        "definition": {
+          "entityName": "Ingredient",
+          "schema": {
+            "$ref": "#/backend/entities/Ingredient"
+          },
+          "description": "Stores ingredient data for a specific user. Only the user can access ingredients under their path. Path-based ownership: `/users/{userId}`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the ingredient."
+            },
+            {
+              "name": "ingredientId",
+              "description": "The ID of the ingredient."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/recipes/{recipeId}",
+        "definition": {
+          "entityName": "Recipe",
+          "schema": {
+            "$ref": "#/backend/entities/Recipe"
+          },
+          "description": "Stores recipe data for a specific user. Only the user can access recipes under their path. Path-based ownership: `/users/{userId}`.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the recipe."
+            },
+            {
+              "name": "recipeId",
+              "description": "The ID of the recipe."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to manage ingredients and recipes for the SweetPrice application. Each user has their own set of ingredients and recipes, ensuring data isolation and simplified security rules based on path-based ownership. This approach eliminates the need for complex authorization logic or database lookups in security rules.\n\nThe `/users/{userId}/ingredients/{ingredientId}` and `/users/{userId}/recipes/{recipeId}` paths enforce that only the authenticated user (`request.auth.uid`) can access their respective ingredients and recipes. This achieves Authorization Independence (CRITICAL) as all authorization is based on the user ID present in the path, and no `get()` calls are needed in security rules.\n\nThe structure supports the required QAPs by isolating data per user, enabling secure `list` operations within each user's scope. The segregation of data per user (`/users/{userId}`) ensures that listing operations will only return the data owned by that user, preventing unauthorized access to other users' data. The structure is simple and scalable and follows the principle of path-based ownership."
   }
 }

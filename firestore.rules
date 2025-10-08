@@ -1,200 +1,80 @@
 /**
- * @fileoverview Firestore Security Rules for Confectionery App
+ * @fileoverview Firestore Security Rules for SweetPrice.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for all data. Each user has a private data tree under `/users/{userId}`.
- * Only the authenticated user can access their own data.
+ * This ruleset enforces a strict user-ownership model. Each user has their own
+ * private data store, completely isolated from other users.
  *
  * Data Structure:
- * All data is nested under /users/{userId}, including ingredients, recipes, customers, orders, campaigns and settings.
+ * All data is nested under /users/{userId}, ensuring that only the authenticated
+ * user can access their own data. This includes both ingredients and recipes.
  *
  * Key Security Decisions:
- * - Users can only access their own data; listing other users' data is disallowed.
- * - All write operations are restricted to the authenticated user.
- *
+ * - Data is strictly segregated by user ID in the path.
+ * - No public listing of user data is allowed.
+ * - Denormalization is not required as the data structure inherently provides
+ *   path-based authorization, avoiding the need for get() calls.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is authenticated.
-     * @return {boolean} True if authenticated, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the authenticated user ID matches the provided user ID.
-     * @param {string} userId The user ID to compare against.
-     * @return {boolean} True if the user ID matches the authenticated user's ID, false otherwise.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the authenticated user is the owner of an existing document.
-     * @param {string} userId The user ID to compare against.
-     * @return {boolean} True if the user is the owner and the resource exists, false otherwise.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rules for user documents.
-     * @path /users/{userId}
-     * @allow (create) If the user is creating their own document.
-     * @deny (get) Always deny direct access to the user document.
-     * @deny (update) Always deny direct updates to the user document.
-     * @deny (delete) Always deny direct deletion of the user document.
-     * @principle Enforces user-ownership for writes and prevents unauthorized access.
-     */
-    match /users/{userId} {
-      // Self-Creation: A user can create their own root document.
-      allow create: if isOwner(userId);
-      // No direct reads, updates, or deletes to the user document itself.
-      allow get, update, delete: if false;
-    }
-
-    /**
-     * @description Rules for ingredient documents.
+     * @description Grants access to a user's ingredients collection.
      * @path /users/{userId}/ingredients/{ingredientId}
-     * @allow (create) If the user is authenticated and creating an ingredient for themselves.
-     * @allow (get) If the user is authenticated and getting an ingredient for themselves.
-     * @allow (list) If the user is authenticated and listing ingredients for themselves.
-     * @allow (update) If the user is authenticated and updating an ingredient for themselves.
-     * @allow (delete) If the user is authenticated and deleting an ingredient for themselves.
-     * @deny (create) If the user is not authenticated or creating an ingredient for another user.
-     * @deny (get) If the user is not authenticated or getting an ingredient for another user.
-     * @deny (list) If the user is not authenticated or listing ingredients for another user.
-     * @deny (update) If the user is not authenticated or updating an ingredient for another user.
-     * @deny (delete) If the user is not authenticated or deleting an ingredient for another user.
-     * @principle Enforces document ownership for writes and prevents unauthorized access.
+     * @allow (create) - User with ID abc can create a new ingredient with the ingredient's id set to abc under /users/abc/ingredients/ghi if request.auth.uid == 'abc'.
+     * @allow (get) - User abc can get the ingredient with ID ghi if request.auth.uid == 'abc'.
+     * @allow (update) - User abc can update the ingredient with ID ghi if request.auth.uid == 'abc'.
+     * @allow (delete) - User abc can delete the ingredient with ID ghi if request.auth.uid == 'abc'.
+     * @deny (create) - User with ID def cannot create a new ingredient under /users/abc/ingredients/ghi.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/ingredients/{ingredientId} {
-      allow create: if isOwner(userId);
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      // Helper function to check if the user is signed in and is the owner of the document.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Rules for recipe documents.
+     * @description Grants access to a user's recipes collection.
      * @path /users/{userId}/recipes/{recipeId}
-     * @allow (create) If the user is authenticated and creating a recipe for themselves.
-     * @allow (get) If the user is authenticated and getting a recipe for themselves.
-     * @allow (list) If the user is authenticated and listing recipes for themselves.
-     * @allow (update) If the user is authenticated and updating a recipe for themselves.
-     * @allow (delete) If the user is authenticated and deleting a recipe for themselves.
-     * @deny (create) If the user is not authenticated or creating a recipe for another user.
-     * @deny (get) If the user is not authenticated or getting a recipe for another user.
-     * @deny (list) If the user is not authenticated or listing recipes for another user.
-     * @deny (update) If the user is not authenticated or updating a recipe for another user.
-     * @deny (delete) If the user is not authenticated or deleting a recipe for another user.
-     * @principle Enforces document ownership for writes and prevents unauthorized access.
+     * @allow (create) - User with ID abc can create a new recipe with the recipe's id set to abc under /users/abc/recipes/ghi if request.auth.uid == 'abc'.
+     * @allow (get) - User abc can get the recipe with ID ghi if request.auth.uid == 'abc'.
+     * @allow (update) - User abc can update the recipe with ID ghi if request.auth.uid == 'abc'.
+     * @allow (delete) - User abc can delete the recipe with ID ghi if request.auth.uid == 'abc'.
+     * @deny (create) - User with ID def cannot create a new recipe under /users/abc/recipes/ghi.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/recipes/{recipeId} {
-      allow create: if isOwner(userId);
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
+      // Helper function to check if the user is signed in and is the owner of the document.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
-    /**
-     * @description Rules for customer documents.
-     * @path /users/{userId}/customers/{customerId}
-     * @allow (create) If the user is authenticated and creating a customer for themselves.
-     * @allow (get) If the user is authenticated and getting a customer for themselves.
-     * @allow (list) If the user is authenticated and listing customers for themselves.
-     * @allow (update) If the user is authenticated and updating a customer for themselves.
-     * @allow (delete) If the user is authenticated and deleting a customer for themselves.
-     * @deny (create) If the user is not authenticated or creating a customer for another user.
-     * @deny (get) If the user is not authenticated or getting a customer for another user.
-     * @deny (list) If the user is not authenticated or listing customers for another user.
-     * @deny (update) If the user is not authenticated or updating a customer for another user.
-     * @deny (delete) If the user is not authenticated or deleting a customer for another user.
-     * @principle Enforces document ownership for writes and prevents unauthorized access.
-     */
-    match /users/{userId}/customers/{customerId} {
-      allow create: if isOwner(userId);
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for order documents.
-     * @path /users/{userId}/orders/{orderId}
-     * @allow (create) If the user is authenticated and creating an order for themselves.
-     * @allow (get) If the user is authenticated and getting an order for themselves.
-     * @allow (list) If the user is authenticated and listing orders for themselves.
-     * @allow (update) If the user is authenticated and updating an order for themselves.
-     * @allow (delete) If the user is authenticated and deleting an order for themselves.
-     * @deny (create) If the user is not authenticated or creating an order for another user.
-     * @deny (get) If the user is not authenticated or getting an order for another user.
-     * @deny (list) If the user is not authenticated or listing orders for another user.
-     * @deny (update) If the user is not authenticated or updating an order for another user.
-     * @deny (delete) If the user is not authenticated or deleting an order for another user.
-     * @principle Enforces document ownership for writes and prevents unauthorized access.
-     */
-    match /users/{userId}/orders/{orderId} {
-      allow create: if isOwner(userId);
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for campaign documents.
-     * @path /users/{userId}/campaigns/{campaignId}
-     * @allow (create) If the user is authenticated and creating a campaign for themselves.
-     * @allow (get) If the user is authenticated and getting a campaign for themselves.
-     * @allow (list) If the user is authenticated and listing campaigns for themselves.
-     * @allow (update) If the user is authenticated and updating a campaign for themselves.
-     * @allow (delete) If the user is authenticated and deleting a campaign for themselves.
-     * @deny (create) If the user is not authenticated or creating a campaign for another user.
-     * @deny (get) If the user is not authenticated or getting a campaign for another user.
-     * @deny (list) If the user is not authenticated or listing campaigns for another user.
-     * @deny (update) If the user is not authenticated or updating a campaign for another user.
-     * @deny (delete) If the user is not authenticated or deleting a campaign for another user.
-     * @principle Enforces document ownership for writes and prevents unauthorized access.
-     */
-    match /users/{userId}/campaigns/{campaignId} {
-      allow create: if isOwner(userId);
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for user settings documents.
-     * @path /users/{userId}/settings/{settingId}
-     * @allow (create) If the user is authenticated and creating settings for themselves.
-     * @allow (get) If the user is authenticated and getting settings for themselves.
-     * @allow (list) If the user is authenticated and listing settings for themselves.
-     * @allow (update) If the user is authenticated and updating settings for themselves.
-     * @allow (delete) If the user is authenticated and deleting settings for themselves.
-     * @deny (create) If the user is not authenticated or creating settings for another user.
-     * @deny (get) If the user is not authenticated or getting settings for another user.
-     * @deny (list) If the user is not authenticated or listing settings for another user.
-     * @deny (update) If the user is not authenticated or updating settings for another user.
-     * @deny (delete) If the user is not authenticated or deleting settings for another user.
-     * @principle Enforces document ownership for writes and prevents unauthorized access.
-     */
-    match /users/{userId}/settings/{settingId} {
-      allow create: if isOwner(userId);
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
   }
 }
