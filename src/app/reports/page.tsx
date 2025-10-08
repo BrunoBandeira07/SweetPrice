@@ -38,7 +38,7 @@ export default function ReportsPage() {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: recipes = [] } = useCollection<Recipe>(recipesQuery);
+    const { data: recipes = [], isLoading: isLoadingRecipes } = useCollection<Recipe>(recipesQuery);
 
     const deliveredOrders = useMemo(() => (orders || []).filter(o => o.deliveryStatus === 'delivered'), [orders]);
 
@@ -57,7 +57,7 @@ export default function ReportsPage() {
     const grossProfit = totalRevenue - totalCost;
     const averageTicket = deliveredOrders.length > 0 ? totalRevenue / deliveredOrders.length : 0;
 
-    const isLoading = isLoadingOrders;
+    const isLoading = isLoadingOrders || isLoadingRecipes;
 
     return (
         <div className="space-y-8">
@@ -98,4 +98,3 @@ export default function ReportsPage() {
         </div>
     );
 }
-
