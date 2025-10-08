@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,32 +20,22 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection, doc } from 'firebase/firestore';
+import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function RecipesPage() {
-    const [recipes, setRecipes] = useState<Recipe[]>([]);
     const { toast } = useToast();
-
-    useEffect(() => {
-        try {
-            const storedRecipes = localStorage.getItem('savedRecipes');
-            if (storedRecipes) {
-                setRecipes(JSON.parse(storedRecipes));
-            }
-        } catch (error) {
-            console.error("Failed to load recipes from localStorage", error);
-            toast({
-                variant: "destructive",
-                title: "Erro ao Carregar Receitas",
-                description: "Não foi possível carregar as receitas salvas.",
-            })
-        }
-    }, [toast]);
+    const firestore = useFirestore();
+    const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+    const { data: recipes = [], isLoading: isLoadingRecipes } = useCollection<Recipe>(recipesCollection);
 
     const handleDeleteRecipe = (recipeId: string) => {
-        const updatedRecipes = recipes.filter(r => r.id !== recipeId);
-        setRecipes(updatedRecipes);
-        localStorage.setItem('savedRecipes', JSON.stringify(updatedRecipes));
+        const docRef = doc(firestore, 'recipes', recipeId);
+        deleteDocumentNonBlocking(docRef);
         toast({
             title: 'Receita Excluída!',
             description: 'A receita foi removida do seu livro.',
@@ -60,6 +49,26 @@ export default function RecipesPage() {
             case 'equipment': return 'Equipamento';
             default: return 'Item';
         }
+    }
+
+    if (isLoadingRecipes) {
+        return (
+            <div className="w-full space-y-6">
+                {[...Array(2)].map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader>
+                            <Skeleton className="h-8 w-1/2" />
+                        </CardHeader>
+                        <CardContent>
+                            <Skeleton className="h-24 w-full" />
+                        </CardContent>
+                        <CardFooter>
+                            <Skeleton className="h-6 w-1/3" />
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        )
     }
 
     return (

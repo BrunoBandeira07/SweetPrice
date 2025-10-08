@@ -20,7 +20,7 @@ interface RecipeBuilderProps {
   ingredients: Ingredient[];
   recipeItems: RecipeItem[];
   setRecipeItems: React.Dispatch<React.SetStateAction<RecipeItem[]>>;
-  onSaveRecipe: (recipe: Recipe) => void;
+  onSaveRecipe: (recipe: Omit<Recipe, 'id'> & { id?: string }) => void;
 }
 
 const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe }: RecipeBuilderProps) => {
@@ -142,8 +142,7 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe 
   const handleSaveRecipe = () => {
     if (!recipeName.trim() || recipeItems.length === 0) return;
 
-    const newRecipe: Recipe = {
-      id: new Date().toISOString(),
+    const newRecipe: Omit<Recipe, 'id'> = {
       name: recipeName,
       items: recipeItems,
       totalCost: totalCost,

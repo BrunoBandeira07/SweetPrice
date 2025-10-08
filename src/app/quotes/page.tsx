@@ -4,8 +4,11 @@
 import { useState, useEffect } from 'react';
 import QuoteBuilder from '@/components/app/quote-builder';
 import QuotePreview from '@/components/app/quote-preview';
-import type { Customer, Recipe, RecipeItem } from '@/lib/types';
+import type { Customer, Recipe } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { collection } from 'firebase/firestore';
 
 export interface QuoteItem {
     id: string;
@@ -26,7 +29,11 @@ export interface Quote {
 
 export default function QuotesPage() {
     const [customers, setCustomers] = useState<Customer[]>([]);
-    const [recipes, setRecipes] = useState<Recipe[]>([]);
+    
+    const firestore = useFirestore();
+    const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+    const { data: recipes = [] } = useCollection<Recipe>(recipesCollection);
+
     const [quote, setQuote] = useState<Quote>({
         customer: {},
         items: [],
@@ -42,18 +49,12 @@ export default function QuotesPage() {
             if (storedCustomers) {
                 setCustomers(JSON.parse(storedCustomers));
             }
-            const storedRecipes = localStorage.getItem('savedRecipes');
-            if (storedRecipes) {
-                const parsedRecipes = JSON.parse(storedRecipes);
-                const validRecipes = parsedRecipes.filter((r: Recipe) => r.name && r.suggestedPrice);
-                setRecipes(validRecipes);
-            }
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
             toast({
                 variant: 'destructive',
                 title: 'Erro ao carregar dados',
-                description: 'Não foi possível carregar clientes ou receitas salvos.'
+                description: 'Não foi possível carregar clientes.'
             })
         }
     }, [toast]);
@@ -64,13 +65,15 @@ export default function QuotesPage() {
         setQuote({ ...updatedQuote, total });
     };
 
+    const validRecipes = recipes.filter(r => r.name && r.suggestedPrice);
+
     return (
         <div className="w-full">
             <main className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
                 <div className="lg:col-span-2">
                     <QuoteBuilder 
                         customers={customers}
-                        recipes={recipes}
+                        recipes={validRecipes}
                         quote={quote}
                         setQuote={updateQuote}
                     />

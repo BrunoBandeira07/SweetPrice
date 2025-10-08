@@ -21,34 +21,22 @@ export default function CalculatorPage() {
   const firestore = useFirestore();
   const ingredientsCollection = useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]);
   const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsCollection);
+  
+  const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+  const { data: savedRecipes = [] } = useCollection<Recipe>(recipesCollection);
 
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
-  const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const { toast } = useToast();
 
   const searchParams = useSearchParams();
   const router = useRouter();
   
   useEffect(() => {
-    try {
-      const storedRecipes = localStorage.getItem('savedRecipes');
-      if (storedRecipes) {
-        setSavedRecipes(JSON.parse(storedRecipes));
-      }
-    } catch (error) {
-      console.error("Failed to load recipes from localStorage", error);
-    }
-  }, []);
-
-  useEffect(() => {
     const recipeToLoadId = searchParams.get('loadRecipe');
-    if (recipeToLoadId) {
+    if (recipeToLoadId && savedRecipes.length > 0) {
       try {
-        const storedRecipes = localStorage.getItem('savedRecipes');
-        if (storedRecipes) {
-          const recipes: Recipe[] = JSON.parse(storedRecipes);
-          const recipeToLoad = recipes.find(r => r.id === recipeToLoadId);
+          const recipeToLoad = savedRecipes.find(r => r.id === recipeToLoadId);
           if (recipeToLoad) {
             setRecipeItems(recipeToLoad.items);
             toast({
@@ -58,13 +46,12 @@ export default function CalculatorPage() {
             // Clean up URL
             router.replace('/calculator', { scroll: false });
           }
-        }
       } catch (error) {
         console.error("Failed to load recipe from URL", error);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, toast]);
+  }, [searchParams, savedRecipes, toast]);
 
   const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => {
     const docRef = ingredient.id ? doc(ingredientsCollection, ingredient.id) : doc(ingredientsCollection);
@@ -106,10 +93,13 @@ export default function CalculatorPage() {
     })
   };
 
-  const handleSaveRecipe = (recipe: Recipe) => {
-    const updatedRecipes = [...savedRecipes, recipe];
-    setSavedRecipes(updatedRecipes);
-    localStorage.setItem('savedRecipes', JSON.stringify(updatedRecipes));
+  const handleSaveRecipe = (recipe: Omit<Recipe, 'id'> & { id?: string }) => {
+    const docRef = recipe.id ? doc(recipesCollection, recipe.id) : doc(recipesCollection);
+    const dataToSave: Recipe = {
+      ...recipe,
+      id: docRef.id,
+    };
+    setDocumentNonBlocking(docRef, dataToSave, { merge: true });
     toast({
       title: 'Receita Salva!',
       description: `A receita "${recipe.name}" foi adicionada ao seu Livro de Receitas.`,

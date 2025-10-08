@@ -48,18 +48,74 @@
           "type": "string",
           "description": "Name of the recipe."
         },
-        "ingredientQuantities": {
+        "items": {
           "type": "array",
-          "description": "List of IngredientQuantity objects.",
+          "description": "List of recipe items (ingredients, labor, equipment).",
           "items": {
-            "type": "string"
+            "$ref": "#/entities/RecipeItem"
           }
+        },
+        "totalCost": {
+          "type": "number",
+          "description": "The total calculated cost of the recipe."
+        },
+        "suggestedPrice": {
+          "type": "number",
+          "description": "The final suggested selling price for the recipe."
         }
       },
       "required": [
         "id",
         "name",
-        "ingredientQuantities"
+        "items",
+        "totalCost",
+        "suggestedPrice"
+      ]
+    },
+    "RecipeItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RecipeItem",
+      "description": "Represents a single item within a recipe, which could be an ingredient, labor, or equipment usage.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "ingredient",
+            "labor",
+            "equipment"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "cost": {
+          "type": "number"
+        },
+        "ingredient": {
+          "description": "Full ingredient object, denormalized for direct access.",
+          "$ref": "#/entities/Ingredient"
+        },
+        "equipmentKey": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "quantity",
+        "unit",
+        "cost"
       ]
     },
     "IngredientQuantity": {
