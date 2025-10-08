@@ -99,6 +99,34 @@
         "productionStatus": { "type": "string", "enum": ["to_do", "buying_supplies", "producing", "finishing", "ready_for_delivery"] }
       },
       "required": ["id", "customerName", "deliveryDate", "items", "total", "deliveryStatus", "productionStatus"]
+    },
+    "Campaign": {
+      "title": "Campaign",
+      "description": "Represents a marketing campaign with tasks and a schedule.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["planning", "in_progress", "completed", "archived"] },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "tasks": {
+          "type": "array",
+          "items": { "$ref": "#/entities/CampaignTask" }
+        }
+      },
+      "required": ["id", "name", "status", "startDate", "endDate"]
+    },
+    "CampaignTask": {
+      "title": "Campaign Task",
+      "description": "A single task within a marketing campaign.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "completed": { "type": "boolean" }
+      },
+      "required": ["id", "text", "completed"]
     }
   },
   "auth": {
@@ -122,6 +150,10 @@
     "/users/{userId}/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
       "description": "Stores all order data for a specific user."
+    },
+    "/users/{userId}/campaigns/{campaignId}": {
+      "schema": { "$ref": "#/entities/Campaign" },
+      "description": "Stores all campaign data for a specific user."
     }
   }
 }

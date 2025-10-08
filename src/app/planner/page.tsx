@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,33 +24,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { getCampaignSuggestions } from '@/app/actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
+import { collection, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Skeleton } from '../ui/skeleton';
 
-
-const MOCK_CAMPAIGNS: Campaign[] = [
-    {
-        id: '1',
-        name: 'Páscoa 2025',
-        status: 'planning',
-        startDate: new Date(2025, 3, 1).toISOString(),
-        endDate: new Date(2025, 3, 20).toISOString(),
-        tasks: [
-            { id: 't1-1', text: 'Definir cardápio de ovos de páscoa', completed: true },
-            { id: 't1-2', text: 'Calcular preço de venda dos produtos', completed: false },
-            { id: 't1-3', text: 'Comprar embalagens temáticas', completed: false },
-        ]
-    },
-    {
-        id: '2',
-        name: 'Dia das Mães 2025',
-        status: 'in_progress',
-        startDate: new Date(2025, 4, 1).toISOString(),
-        endDate: new Date(2025, 4, 11).toISOString(),
-        tasks: [
-            { id: 't2-1', text: 'Criar kit especial para presente', completed: true },
-            { id: 't2-2', text: 'Divulgar nas redes sociais', completed: true },
-        ]
-    }
-];
 
 const campaignFormSchema = z.object({
   name: z.string().min(3, "O nome da campanha é obrigatório."),
@@ -73,7 +52,7 @@ const STATUS_MAP: Record<CampaignStatus, { label: string; className: string; ico
 };
 
 
-const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; campaign?: Campaign }) => {
+const CampaignForm = ({ onSave, campaign }: { onSave: (data: Omit<Campaign, 'id'> & { id?: string }) => void; campaign?: Campaign }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isSuggesting, setIsSuggesting] = useState(false);
     const { toast } = useToast();
@@ -128,15 +107,15 @@ const CampaignForm = ({ onSave, campaign }: { onSave: (data: Campaign) => void; 
 
 
     const onSubmit = (data: CampaignFormValues) => {
-        const newCampaign: Campaign = {
-            id: campaign?.id || new Date().toISOString(),
+        const campaignData: Omit<Campaign, 'id'> & { id?: string } = {
+            id: campaign?.id,
             name: data.name,
             startDate: data.dateRange.from.toISOString(),
             endDate: data.dateRange.to.toISOString(),
             status: campaign?.status || 'planning',
             tasks: data.tasks ? data.tasks.map((t, i) => ({ id: campaign?.tasks[i]?.id || `${new Date().toISOString()}-${i}`, text: t.text, completed: campaign?.tasks[i]?.completed || false })) : [],
         }
-        onSave(newCampaign);
+        onSave(campaignData);
         reset({
             name: '',
             dateRange: { from: undefined, to: undefined },
@@ -290,7 +269,7 @@ const CampaignCard = ({ campaign, onUpdate, onDelete }: { campaign: Campaign, on
                                    <Button variant="ghost" size="icon"><MoreVertical /></Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
-                                     <CampaignForm onSave={onUpdate} campaign={campaign}/>
+                                     <CampaignForm onSave={(data) => onUpdate({...(data as Campaign), id: campaign.id})} campaign={campaign}/>
                                      <DropdownMenuItem onClick={() => handleStatusChange(campaign.status === 'archived' ? 'planning' : 'archived')}>
                                         <Archive className="mr-2 h-4 w-4" />
                                         <span>{campaign.status === 'archived' ? 'Desarquivar' : 'Arquivar'}</span>
@@ -385,45 +364,35 @@ const CampaignCard = ({ campaign, onUpdate, onDelete }: { campaign: Campaign, on
 }
 
 export default function PlannerPage() {
-    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const { toast } = useToast();
+    const { user } = useUser();
+    const firestore = useFirestore();
 
-    useEffect(() => {
-        try {
-            const storedCampaigns = localStorage.getItem('campaigns');
-            if (storedCampaigns) {
-                setCampaigns(JSON.parse(storedCampaigns));
-            } else {
-                setCampaigns(MOCK_CAMPAIGNS);
-            }
-        } catch (error) {
-            console.error("Failed to load campaigns from localStorage", error);
-        }
-    }, []);
+    const campaignsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'campaigns') : null, [firestore, user]);
+    const { data: campaigns = [], isLoading: isLoadingCampaigns } = useCollection<Campaign>(campaignsCollection);
 
-    const updateCampaigns = (newCampaigns: Campaign[]) => {
-        setCampaigns(newCampaigns);
-        localStorage.setItem('campaigns', JSON.stringify(newCampaigns));
-    };
-    
-    const handleSaveCampaign = (campaign: Campaign) => {
-        const existing = campaigns.find(c => c.id === campaign.id);
-        let newCampaigns;
-        if (existing) {
-            newCampaigns = campaigns.map(c => c.id === campaign.id ? campaign : c);
-        } else {
-            newCampaigns = [...campaigns, campaign];
-        }
-        updateCampaigns(newCampaigns);
+    const handleSaveCampaign = (campaignData: Omit<Campaign, 'id'> & { id?: string }) => {
+        if (!campaignsCollection) return;
+        const isEditing = !!campaignData.id;
+        const docRef = campaignData.id ? doc(campaignsCollection, campaignData.id) : doc(campaignsCollection);
+
+        const dataToSave: Campaign = {
+            ...campaignData,
+            id: docRef.id,
+        };
+
+        setDocumentNonBlocking(docRef, dataToSave, { merge: true });
+
         toast({
-            title: `Campanha "${campaign.name}" salva!`,
-            description: existing ? 'As informações foram atualizadas.' : 'Sua nova campanha foi criada com sucesso.',
+            title: `Campanha "${campaignData.name}" salva!`,
+            description: isEditing ? 'As informações foram atualizadas.' : 'Sua nova campanha foi criada com sucesso.',
         })
     };
     
     const handleDeleteCampaign = (id: string) => {
-        const newCampaigns = campaigns.filter(c => c.id !== id);
-        updateCampaigns(newCampaigns);
+        if (!campaignsCollection) return;
+        const docRef = doc(campaignsCollection, id);
+        deleteDocumentNonBlocking(docRef);
         toast({
             title: 'Campanha Excluída!',
             description: 'A campanha foi removida do seu planejador.',
@@ -444,7 +413,11 @@ export default function PlannerPage() {
                 <CampaignForm onSave={handleSaveCampaign} />
             </div>
             
-            {activeCampaigns.length > 0 ? (
+            {isLoadingCampaigns ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
+                 </div>
+            ) : activeCampaigns.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
                     {activeCampaigns.map(campaign => (
                         <CampaignCard key={campaign.id} campaign={campaign} onUpdate={handleSaveCampaign} onDelete={handleDeleteCampaign} />
