@@ -156,9 +156,16 @@ export default function CustomersPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[...Array(3)].map((_, i) => (
                                     <Card key={i}>
-                                        <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
-                                        <CardContent><Skeleton className="h-10 w-full" /></CardContent>
-                                        <CardFooter><Skeleton className="h-10 w-full" /></CardFooter>
+                                        <CardHeader>
+                                            <Skeleton className="h-6 w-1/2" />
+                                            <Skeleton className="h-4 w-1/3" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Skeleton className="h-12 w-full" />
+                                        </CardContent>
+                                        <CardFooter>
+                                            <Skeleton className="h-10 w-full" />
+                                        </CardFooter>
                                     </Card>
                                 ))}
                             </div>

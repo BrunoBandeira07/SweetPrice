@@ -13,15 +13,10 @@ interface TopProductsCardProps {
     isLoading: boolean;
 }
 
-interface ProductCount {
-    name: string;
-    quantity: number;
-}
-
 export default function TopProductsCard({ orders, isLoading }: TopProductsCardProps) {
 
     const topProducts = useMemo(() => {
-        if (isLoading || !orders) return [];
+        if (!orders || orders.length === 0) return [];
 
         const productMap: { [key: string]: number } = {};
         const currentMonth = new Date().getMonth();
@@ -48,7 +43,7 @@ export default function TopProductsCard({ orders, isLoading }: TopProductsCardPr
             .sort((a, b) => b.quantity - a.quantity)
             .slice(0, 5);
 
-    }, [orders, isLoading]);
+    }, [orders]);
 
     return (
         <Card>

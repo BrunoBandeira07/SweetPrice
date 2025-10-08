@@ -41,13 +41,13 @@ export default function DashboardPage() {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
+    const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
 
     const customersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'customers'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
+    const { data: customers, isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
 
     const ingredientsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
@@ -62,34 +62,35 @@ export default function DashboardPage() {
     const { data: settings, isLoading: isLoadingSettings } = useDoc<UserSettings>(settingsDocRef);
 
     const monthlySales = useMemo(() => {
-        if (isLoadingOrders) return 0;
-        return (orders || [])
+        if (isLoadingOrders || !orders) return 0;
+        return orders
             .filter(o => o.deliveryStatus === 'delivered' && new Date(o.deliveryDate).getMonth() === new Date().getMonth())
             .reduce((sum, o) => sum + o.total, 0);
     }, [orders, isLoadingOrders]);
 
     const pendingOrdersCount = useMemo(() => {
-        if (isLoadingOrders) return 0;
-        return (orders || []).filter(o => o.deliveryStatus === 'pending').length;
+        if (isLoadingOrders || !orders) return 0;
+        return orders.filter(o => o.deliveryStatus === 'pending').length;
     }, [orders, isLoadingOrders]);
     
     const upcomingOrders = useMemo(() => {
-        if (isLoadingOrders) return [];
-        return (orders || [])
+        if (isLoadingOrders || !orders) return [];
+        return orders
             .filter(o => o.deliveryStatus === 'pending' && new Date(o.deliveryDate) >= new Date())
             .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
             .slice(0, 5); // Limit to 5 upcoming orders
     }, [orders, isLoadingOrders]);
 
     const criticalStockCount = useMemo(() => {
-        if (isLoadingIngredients) return 0;
-        return (ingredients || []).filter(i => (i.stockQuantity ?? 0) <= (i.lowStockThreshold ?? 0)).length;
+        if (isLoadingIngredients || !ingredients) return 0;
+        return ingredients.filter(i => (i.stockQuantity ?? 0) <= (i.lowStockThreshold ?? 0)).length;
     }, [ingredients, isLoadingIngredients]);
 
     const customerCount = useMemo(() => {
-        if (isLoadingCustomers) return 0;
-        return (customers || []).length;
+        if (isLoadingCustomers || !customers) return 0;
+        return customers.length;
     }, [customers, isLoadingCustomers]);
+
 
     const isLoading = isUserLoading || isLoadingOrders || isLoadingCustomers || isLoadingIngredients || isLoadingSettings;
 
@@ -116,7 +117,7 @@ export default function DashboardPage() {
                     value={`${customerCount}`} 
                     icon={Users} 
                     description="Número de clientes cadastrados" 
-                    isLoading={isLoading}
+                    isLoading={isLoadingCustomers}
                 />
                 <StatCard 
                     title="Estoque Crítico" 

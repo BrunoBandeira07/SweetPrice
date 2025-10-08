@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart, FileText, PanelLeft, CalendarCheck, BarChart3 } from 'lucide-react';
+import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart, FileText, CalendarCheck, BarChart3 } from 'lucide-react';
 import { SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 
 const navItems = [

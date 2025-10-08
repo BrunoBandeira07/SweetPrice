@@ -73,23 +73,22 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
-    setIsUserLoading(true);
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
-        setIsUserLoading(false);
+        if (isUserLoading) setIsUserLoading(false);
         setUserError(null);
         forceUpdate(); // Force a re-render to ensure currentUser is fresh
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
-        setIsUserLoading(false);
+        if (isUserLoading) setIsUserLoading(false);
         setUserError(error);
         forceUpdate(); // Force a re-render
       }
     );
     return () => unsubscribe(); // Cleanup
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth]); // Depends on the auth instance
 
   // Memoize the context value
@@ -179,7 +178,8 @@ export const useUser = (): UserHookResult => {
     if (context === undefined) {
     throw new Error('useUser must be used within a FirebaseProvider.');
   }
-  const { user, isUserLoading, userError } = context;
+  const { auth, isUserLoading, userError } = context;
+  const user = auth?.currentUser ?? null;
   
   return { user, isUserLoading, userError };
 };
