@@ -1,12 +1,10 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useReducer } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, getDoc } from 'firebase/firestore';
+import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { seedInitialData } from './seed-data';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -70,15 +68,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      async (firebaseUser) => { // Auth state determined
-        if (firebaseUser) {
-          // Check if user is new and seed data if necessary
-          const settingsRef = doc(firestore, 'settings', firebaseUser.uid);
-          const docSnap = await getDoc(settingsRef);
-          if (!docSnap.exists()) {
-            await seedInitialData(firebaseUser.uid, firestore);
-          }
-        }
+      (firebaseUser) => { // Auth state determined
         if (isUserLoading) setIsUserLoading(false);
         setUserError(null);
         forceUpdate(); // Force a re-render to ensure currentUser is fresh
