@@ -17,7 +17,7 @@ import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Skeleton } from '../ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useFieldArray } from 'react-hook-form';
 
 const customExpenseSchema = z.object({
@@ -243,3 +243,5 @@ export default function CostsPage() {
     </div>
   );
 }
+
+    
