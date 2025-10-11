@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { seedInitialData } from '@/firebase/seed-data';
 import { Loader2 } from 'lucide-react';
-import { getRedirectResult } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
@@ -17,38 +16,22 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const [isSeeding, setIsSeeding] = useState(false);
-    const [isVerifying, setIsVerifying] = useState(true);
+    
+    // isVerifying state is no longer needed with signInWithPopup
+    // as the onAuthStateChanged listener handles the user state directly.
 
     useEffect(() => {
-        getRedirectResult(auth)
-            .then((result) => {
-                if (result) {
-                    console.log("Redirect result processed for user:", result.user.uid);
-                }
-            })
-            .catch((error) => {
-                console.error("Error processing redirect result:", error.code);
-                // If the specific error is 'operation-not-allowed', redirect to login with an error param
-                if (error.code === 'auth/operation-not-allowed') {
-                    router.replace('/login?error=operation-not-allowed');
-                }
-            })
-            .finally(() => {
-                setIsVerifying(false);
-            });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [auth]);
-
-    useEffect(() => {
-        if (isUserLoading || isVerifying) {
-            return;
+        if (isUserLoading) {
+            return; // Wait until Firebase has determined the auth state.
         }
 
         if (!user) {
+            // If there's no user and we are not on the login page, redirect to login.
             if (pathname !== '/login') {
                 router.replace('/login');
             }
         } else {
+            // User is authenticated. Check if we need to seed data.
             setIsSeeding(true);
             const userSettingsRef = doc(firestore, 'settings', user.uid);
             getDoc(userSettingsRef).then(docSnap => {
@@ -57,12 +40,15 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                     seedInitialData(user.uid, firestore).finally(() => {
                         console.log("Seeding complete.");
                         setIsSeeding(false);
+                        // If user was on login page, redirect to home.
                         if (pathname === '/login') {
                             router.replace('/');
                         }
                     });
                 } else {
+                    // User already has data, no need to seed.
                     setIsSeeding(false);
+                    // If user was on login page, redirect to home.
                     if (pathname === '/login') {
                         router.replace('/');
                     }
@@ -73,9 +59,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             });
         }
 
-    }, [user, isUserLoading, isVerifying, pathname, router, firestore]);
+    }, [user, isUserLoading, pathname, router, firestore]);
 
-    if (isUserLoading || isVerifying || isSeeding || (!user && pathname !== '/login')) {
+    // Show a loading spinner while auth state is being determined, or while seeding data.
+    // Also show loading if we're not on the login page and don't have a user yet (avoids flashing content).
+    if (isUserLoading || isSeeding || (!user && pathname !== '/login')) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-background">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -83,9 +71,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         );
     }
     
+    // If we have a user (and not seeding) OR we are on the login page, render the children.
     if ((user && !isSeeding) || pathname === '/login') {
         return <>{children}</>;
     }
 
+    // Fallback, should not be reached in normal flow.
     return null;
 }

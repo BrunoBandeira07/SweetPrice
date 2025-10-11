@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, AuthError } from 'firebase/auth';
 import { useAuth } from '@/firebase/provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,10 +33,24 @@ export default function LoginPage() {
 
     const handleGoogleSignIn = async () => {
         const provider = new GoogleAuthProvider();
-        // Clear any previous errors before initiating sign-in
         setError(null);
-        // This just starts the redirect process. The result is handled in AuthGate.
-        await signInWithRedirect(auth, provider);
+        try {
+            await signInWithPopup(auth, provider);
+            // On successful sign-in, AuthGate will handle the redirect.
+        } catch (e) {
+            const error = e as AuthError;
+            console.error("Popup sign-in error:", error.code);
+            if (error.code === 'auth/operation-not-allowed') {
+                setError("O login com Google não está ativado para este projeto. Por favor, ative-o no Painel do Firebase em Authentication > Sign-in method.");
+            } else if (error.code === 'auth/popup-blocked') {
+                setError("O pop-up de login foi bloqueado pelo seu browser. Por favor, permita pop-ups para este site e tente novamente.");
+            } else if (error.code === 'auth/popup-closed-by-user') {
+                setError(null); // User closed popup, do not show an error.
+            }
+            else {
+                setError("Ocorreu um erro inesperado durante o login. Tente novamente.");
+            }
+        }
     };
     
     return (
