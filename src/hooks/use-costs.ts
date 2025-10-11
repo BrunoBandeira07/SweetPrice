@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { z } from 'zod';
 import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
 import { doc } from 'firebase/firestore';
@@ -44,8 +44,10 @@ export const useCosts = () => {
       if (!user || !firestore) return null;
       return doc(firestore, 'costs', user.uid)
     }, [firestore, user]);
+    
     const { data } = useDoc<CostsFormValues>(costsDocRef);
-    const costs: CostsFormValues = data || {};
+    // This is the fix: ensure `costs` is an empty object if `data` is null.
+    const costs = data || {}; 
 
     const electricEquipments: Equipments = useMemo(() => ({
         microwavePower: { label: 'Micro-ondas', value: costs.microwavePower, unit: 'Watts' },
