@@ -102,13 +102,13 @@ export default function OrdersPage() {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: orders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
+    const { data: orders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
     
     const recipesQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: recipes = [] } = useCollection<Recipe>(recipesQuery);
+    const { data: recipes, isLoading: isLoadingRecipes } = useCollection<Recipe>(recipesQuery);
 
     const handleProductionStatusChange = (orderId: string, newStatus: ProductionStatus) => {
         if (!firestore) return;
@@ -137,13 +137,15 @@ export default function OrdersPage() {
         setDocumentNonBlocking(docRef, orderWithId, { merge: true });
     }
 
-    const pendingOrders = (orders || [])
+    const pendingOrders = orders
         .filter(o => o.deliveryStatus === 'pending')
         .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
 
-    const completedOrders = (orders || [])
+    const completedOrders = orders
         .filter(o => o.deliveryStatus !== 'pending')
         .sort((a,b) => new Date(b.deliveryDate).getTime() - new Date(a.deliveryDate).getTime());
+    
+    const isLoading = isLoadingOrders || isLoadingRecipes;
     
     return (
         <div className="w-full space-y-8">
@@ -158,7 +160,7 @@ export default function OrdersPage() {
                             <CircleDotDashed className="h-8 w-8 text-primary"/>
                             <h1 className="text-3xl font-bold">Encomendas Pendentes ({pendingOrders.length})</h1>
                         </div>
-                        {isLoadingOrders ? (
+                        {isLoading ? (
                             <div className="space-y-4">
                                 <Skeleton className="h-40 w-full" />
                                 <Skeleton className="h-40 w-full" />
@@ -182,7 +184,7 @@ export default function OrdersPage() {
                             <CheckCircle2 className="h-8 w-8 text-green-600"/>
                             <h1 className="text-3xl font-bold">Histórico de Encomendas ({completedOrders.length})</h1>
                         </div>
-                        {isLoadingOrders ? (
+                        {isLoading ? (
                             <div className="space-y-4">
                                 <Skeleton className="h-40 w-full" />
                             </div>

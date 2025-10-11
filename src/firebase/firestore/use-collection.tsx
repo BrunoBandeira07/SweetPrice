@@ -20,7 +20,7 @@ export type WithId<T> = T & { id: string };
  * @template T Type of the document data.
  */
 export interface UseCollectionResult<T> {
-  data: WithId<T>[] | null; // Document data with ID, or null.
+  data: WithId<T>[]; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
 }
@@ -55,15 +55,15 @@ export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
-  type StateDataType = ResultItemType[] | null;
+  type StateDataType = ResultItemType[];
 
-  const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [data, setData] = useState<StateDataType>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
     if (!memoizedTargetRefOrQuery) {
-      setData(null);
+      setData([]);
       setIsLoading(false);
       setError(null);
       return;
@@ -97,7 +97,7 @@ export function useCollection<T = any>(
         })
 
         setError(contextualError)
-        setData(null)
+        setData([])
         setIsLoading(false)
 
         // trigger global error propagation
