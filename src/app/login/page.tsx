@@ -1,11 +1,13 @@
 
 'use client';
 
+import { useState } from 'react';
 import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { useAuth } from '@/firebase/provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Cake } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Cake, AlertTriangle } from 'lucide-react';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -17,11 +19,22 @@ const GoogleIcon = () => (
 );
 
 export default function LoginPage() {
-    const auth = useAuth(); // Correctly get the auth object
+    const auth = useAuth();
+    const [error, setError] = useState<string | null>(null);
 
-    const handleGoogleSignIn = () => {
+    const handleGoogleSignIn = async () => {
         const provider = new GoogleAuthProvider();
-        signInWithRedirect(auth, provider);
+        try {
+            // We use a try-catch block to handle potential configuration errors.
+            await signInWithRedirect(auth, provider);
+        } catch (e: any) {
+            console.error("Firebase sign-in error:", e.code);
+            if (e.code === 'auth/operation-not-allowed') {
+                setError("O login com Google não está ativado para este projeto. Por favor, ative-o no Painel do Firebase em Authentication > Sign-in method.");
+            } else {
+                setError("Ocorreu um erro inesperado durante o login. Tente novamente.");
+            }
+        }
     };
     
     return (
@@ -34,7 +47,16 @@ export default function LoginPage() {
                     <CardTitle className="mt-4 text-3xl font-bold">Bem-vindo(a) ao Precifica Céu</CardTitle>
                     <CardDescription>Entre com a sua conta Google para começar a gerir a sua confeitaria.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Erro de Configuração</AlertTitle>
+                            <AlertDescription>
+                                {error}
+                            </AlertDescription>
+                        </Alert>
+                    )}
                     <Button 
                         className="w-full" 
                         onClick={handleGoogleSignIn}
