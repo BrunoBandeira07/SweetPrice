@@ -44,7 +44,7 @@ export default function CustomersPage() {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'customers'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: customers = [], isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
+    const { data: customers, isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
 
     const ordersQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;

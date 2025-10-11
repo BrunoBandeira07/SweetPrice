@@ -14,7 +14,7 @@ import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface CustomerListProps {
-    customers: Customer[];
+    customers: Customer[] | null;
     allOrders: Order[];
     onDeleteCustomer: (customerId: string) => void;
 }
@@ -46,7 +46,7 @@ export default function CustomerList({ customers, allOrders, onDeleteCustomer }:
         setLoadingSuggestion(null);
     }
 
-    if (customers.length === 0) {
+    if (!customers || customers.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-96 text-center p-4 border-2 border-dashed rounded-lg">
                 <Users className="h-16 w-16 text-muted-foreground/50 mb-4" />
