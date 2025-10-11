@@ -50,16 +50,32 @@ export default function CalculatorClientPage() {
           if (recipeToLoad) {
             setEditingRecipe(recipeToLoad);
             // Re-hydrate ingredients from the main ingredients list
-            const hydratedItems = recipeToLoad.items.map(item => {
+            const hydratedItems = recipeToLoad.items.reduce((acc, item) => {
                 if (item.type === 'ingredient' && item.ingredient?.id) {
                     const fullIngredient = ingredients.find(i => i.id === item.ingredient!.id);
-                    // Ensure the latest ingredient data is used
-                    return { ...item, ingredient: fullIngredient, cost: (fullIngredient?.unitCost || 0) * item.quantity * (fullIngredient?.lossFactor || 1) };
+                    if (fullIngredient) {
+                        const newItem = {
+                            ...item,
+                            ingredient: fullIngredient,
+                            cost: (fullIngredient.unitCost || 0) * item.quantity * (fullIngredient.lossFactor || 1)
+                        };
+                        acc.push(newItem);
+                    } else {
+                        console.warn(`Ingredient with ID ${item.ingredient.id} not found in the main list.`);
+                        // Optionally, inform the user that an ingredient was missing.
+                        toast({
+                          variant: "destructive",
+                          title: "Ingrediente não encontrado",
+                          description: `O ingrediente "${item.name}" não foi encontrado e não foi adicionado à receita.`,
+                        });
+                    }
+                } else {
+                    acc.push(item);
                 }
-                return item;
-            });
+                return acc;
+            }, [] as RecipeItem[]);
 
-            setRecipeItems(hydratedItems as RecipeItem[]);
+            setRecipeItems(hydratedItems);
             
             toast({
               title: `Receita "${recipeToLoad.name}" carregada!`,
