@@ -44,7 +44,8 @@ export const useCosts = () => {
       if (!user || !firestore) return null;
       return doc(firestore, 'costs', user.uid)
     }, [firestore, user]);
-    const { data: costs = {} as CostsFormValues } = useDoc<CostsFormValues>(costsDocRef);
+    const { data } = useDoc<CostsFormValues>(costsDocRef);
+    const costs: CostsFormValues = data || {};
 
     const electricEquipments: Equipments = useMemo(() => ({
         microwavePower: { label: 'Micro-ondas', value: costs.microwavePower, unit: 'Watts' },

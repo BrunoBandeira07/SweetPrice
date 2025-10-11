@@ -94,7 +94,8 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe,
       setIngredientQuantity(0);
     } 
     else if (type === 'labor' && laborTime > 0) {
-        const proLaborePerHour = (costs.proLabore || 0) / (22 * 8); // Assuming 22 work days, 8 hours/day
+        const proLaboreCost = costs.proLabore || 0;
+        const proLaborePerHour = proLaboreCost / (22 * 8); // Assuming 22 work days, 8 hours/day
         const costPerMinute = proLaborePerHour / 60;
         const cost = costPerMinute * laborTime;
         newItem = {
@@ -110,12 +111,15 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe,
     else if (type === 'equipment' && selectedEquipment && equipmentTime > 0) {
       let cost = 0;
       const timeInHours = equipmentTime / 60;
-      
-      if (selectedEquipment.unit === 'Watts' && costs.kwhPrice) { // Electric
+      const kwhPrice = costs.kwhPrice || 0;
+      const gasCylinderPrice = costs.gasCylinderPrice || 0;
+      const gasCylinderSize = parseFloat(costs.gasCylinderSize || '0');
+
+      if (selectedEquipment.unit === 'Watts' && kwhPrice > 0) { // Electric
         const powerInKw = selectedEquipment.value / 1000;
-        cost = powerInKw * timeInHours * costs.kwhPrice;
-      } else if (selectedEquipment.unit === 'kg/h' && costs.gasCylinderPrice && costs.gasCylinderSize) { // Gas
-        const gasPricePerKg = costs.gasCylinderPrice / parseFloat(costs.gasCylinderSize);
+        cost = powerInKw * timeInHours * kwhPrice;
+      } else if (selectedEquipment.unit === 'kg/h' && gasCylinderPrice > 0 && gasCylinderSize > 0) { // Gas
+        const gasPricePerKg = gasCylinderPrice / gasCylinderSize;
         const gasConsumedKg = selectedEquipment.value * timeInHours;
         cost = gasConsumedKg * gasPricePerKg;
       }
@@ -147,18 +151,25 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe,
     return recipeItems.reduce((acc, item) => acc + item.cost, 0);
   }, [recipeItems]);
 
-  const suggestedPrice = useMemo(() => {
-    if (totalCost === 0) return 0;
-    
-    // Add indirect costs and taxes before profit margin
-    const costWithIndirects = totalCost * (1 + (costs.indirectCostsRate || 0) / 100);
-    const costWithTaxes = costWithIndirects / (1 - ((costs.taxRate || 0) + (costs.creditCardFee || 0)) / 100);
+    const suggestedPrice = useMemo(() => {
+        if (totalCost === 0) return 0;
 
-    if (marginType === 'percentage') {
-      return costWithTaxes * (1 + margin / 100);
-    }
-    return costWithTaxes + margin;
-  }, [totalCost, margin, marginType, costs]);
+        const indirectCostsRate = Number(costs.indirectCostsRate) || 0;
+        const taxRate = Number(costs.taxRate) || 0;
+        const creditCardFee = Number(costs.creditCardFee) || 0;
+
+        const costWithIndirects = totalCost * (1 + indirectCostsRate / 100);
+
+        const totalTaxRate = taxRate + creditCardFee;
+        const costWithTaxes = totalTaxRate < 100 
+            ? costWithIndirects / (1 - totalTaxRate / 100) 
+            : costWithIndirects; // Avoid division by zero or negative
+
+        if (marginType === 'percentage') {
+            return costWithTaxes * (1 + (Number(margin) || 0) / 100);
+        }
+        return costWithTaxes + (Number(margin) || 0);
+    }, [totalCost, margin, marginType, costs]);
 
 
   const handleSave = () => {
