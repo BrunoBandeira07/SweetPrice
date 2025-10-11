@@ -1,5 +1,5 @@
 
-import type { Customer, Ingredient, Order, Recipe, Unit } from './types';
+import type { Customer, Ingredient, Order, Recipe, Unit, ProductionStatus } from './types';
 
 export const UNITS: { value: Unit; label: string }[] = [
   { value: 'g', label: 'Gramas (g)' },
@@ -8,6 +8,14 @@ export const UNITS: { value: Unit; label: string }[] = [
   { value: 'l', label: 'Litros (l)' },
   { value: 'un', label: 'Unidades (un)' },
 ];
+
+export const PRODUCTION_STATUS_MAP: Record<ProductionStatus, { label: string, color: string }> = {
+  to_do: { label: 'A fazer', color: 'bg-gray-200' },
+  buying_supplies: { label: 'Comprando insumos', color: 'bg-blue-200' },
+  producing: { label: 'Produzindo', color: 'bg-yellow-200' },
+  finishing: { label: 'Finalizando', color: 'bg-orange-200' },
+  ready_for_delivery: { label: 'Pronto para entrega', color: 'bg-green-200' },
+};
 
 // Dados iniciais para novos usuários
 export const INITIAL_INGREDIENTS: Omit<Ingredient, 'id' | 'userId'>[] = [
