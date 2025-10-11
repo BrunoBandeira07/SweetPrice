@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Alegreya_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/app/app-sidebar';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
@@ -33,7 +33,10 @@ export default function RootLayout({
               <AppSidebar />
             </Sidebar>
             <SidebarInset>
-              <div className="flex justify-center w-full">
+              <div className="absolute top-4 right-4 md:top-8 md:right-8 z-10">
+                <SidebarTrigger />
+              </div>
+              <div className="flex justify-center w-full pt-16 md:pt-20">
                 <main className="w-full max-w-7xl p-4 md:p-8">
                   {children}
                 </main>
