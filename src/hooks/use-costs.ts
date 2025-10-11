@@ -37,6 +37,9 @@ type CostsFormValues = z.infer<typeof costsFormSchema>;
 type Equipment = { label: string; value: number | undefined, unit: 'Watts' | 'kg/h' };
 type Equipments = Record<string, Equipment>;
 
+// Define a default empty costs object outside the hook to guarantee a non-null value.
+const defaultCosts: CostsFormValues = {};
+
 export const useCosts = () => {
     const { user } = useUser();
     const firestore = useFirestore();
@@ -45,9 +48,9 @@ export const useCosts = () => {
       return doc(firestore, 'costs', user.uid)
     }, [firestore, user]);
     
+    // Use the data from the doc, but fall back to the guaranteed empty object.
     const { data } = useDoc<CostsFormValues>(costsDocRef);
-    // This is the fix: ensure `costs` is an empty object if `data` is null.
-    const costs = data || {}; 
+    const costs = data || defaultCosts;
 
     const electricEquipments: Equipments = useMemo(() => ({
         microwavePower: { label: 'Micro-ondas', value: costs.microwavePower, unit: 'Watts' },
