@@ -36,7 +36,6 @@ export default function AppSidebar() {
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
-                href={item.href}
                 asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
