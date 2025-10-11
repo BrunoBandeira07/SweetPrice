@@ -1,8 +1,11 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart, FileText, CalendarCheck, BarChart3 } from 'lucide-react';
-import { SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger } from '@/components/ui/sidebar';
+import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart, FileText, CalendarCheck, BarChart3, LogOut } from 'lucide-react';
+import { SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarFooter } from '@/components/ui/sidebar';
+import { useAuth } from '@/firebase/provider';
+import { signOut } from 'firebase/auth';
+import { Button } from '../ui/button';
 
 const navItems = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -19,6 +22,12 @@ const navItems = [
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const auth = useAuth();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    // The AuthGate will handle the redirect to /login
+  };
 
   return (
     <>
@@ -49,6 +58,16 @@ export default function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarFooter className="p-4">
+          <SidebarMenu>
+            <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout} tooltip="Sair">
+                    <LogOut/>
+                    <span>Sair</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+      </SidebarFooter>
     </>
   );
 }

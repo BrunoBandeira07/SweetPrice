@@ -2,7 +2,6 @@
 'use client';
 import { Firestore, collection, doc, writeBatch } from "firebase/firestore";
 import { INITIAL_INGREDIENTS, INITIAL_RECIPES, INITIAL_CUSTOMERS, INITIAL_ORDERS } from "@/lib/constants";
-import { Ingredient, Recipe } from "@/lib/types";
 
 // This function seeds the database for a new user.
 export const seedInitialData = async (userId: string, db: Firestore) => {
@@ -38,7 +37,7 @@ export const seedInitialData = async (userId: string, db: Firestore) => {
             quantity: item.quantity,
             unit: item.unit,
             cost: cost,
-            ingredient: { name: item.name }, // Store as reference
+            ingredient: { id: `initial-${item.name}`, name: item.name }, // Store as reference-like object
         }
     });
     const boloRecipeData = {
@@ -66,7 +65,7 @@ export const seedInitialData = async (userId: string, db: Firestore) => {
             quantity: item.quantity,
             unit: item.unit,
             cost: cost,
-            ingredient: { name: item.name }, // Store as reference
+            ingredient: { id: `initial-${item.name}`, name: item.name }, // Store as reference-like object
         }
     });
      const brigadeiroRecipeData = {

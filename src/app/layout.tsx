@@ -6,6 +6,7 @@ import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar'
 import AppSidebar from '@/components/app/app-sidebar';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import AuthGate from '@/components/app/auth-gate';
 
 const alegreya = Alegreya_Sans({ 
   subsets: ['latin'], 
@@ -28,18 +29,20 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn('font-sans', alegreya.variable)}>
         <FirebaseClientProvider>
-          <SidebarProvider>
-            <Sidebar collapsible="icon">
-              <AppSidebar />
-            </Sidebar>
-            <SidebarInset>
-              <div className="flex justify-center w-full">
-                <main className="w-full max-w-7xl p-4 md:p-8">
-                  {children}
-                </main>
-              </div>
-            </SidebarInset>
-          </SidebarProvider>
+          <AuthGate>
+            <SidebarProvider>
+              <Sidebar collapsible="icon">
+                <AppSidebar />
+              </Sidebar>
+              <SidebarInset>
+                <div className="flex justify-center w-full">
+                  <main className="w-full max-w-7xl p-4 md:p-8">
+                    {children}
+                  </main>
+                </div>
+              </SidebarInset>
+            </SidebarProvider>
+          </AuthGate>
           <Toaster />
         </FirebaseClientProvider>
       </body>
