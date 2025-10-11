@@ -137,11 +137,11 @@ export default function OrdersPage() {
         setDocumentNonBlocking(docRef, orderWithId, { merge: true });
     }
 
-    const pendingOrders = orders
+    const pendingOrders = (orders || [])
         .filter(o => o.deliveryStatus === 'pending')
         .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime());
 
-    const completedOrders = orders
+    const completedOrders = (orders || [])
         .filter(o => o.deliveryStatus !== 'pending')
         .sort((a,b) => new Date(b.deliveryDate).getTime() - new Date(a.deliveryDate).getTime());
     
