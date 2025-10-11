@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Cake, BookHeart, Settings, LayoutDashboard, Users, Archive, ShoppingCart, FileText, CalendarCheck, BarChart3 } from 'lucide-react';
-import { SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger } from '@/components/ui/sidebar';
 
 const navItems = [
   { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -19,7 +19,6 @@ const navItems = [
 
 export default function AppSidebar() {
   const pathname = usePathname();
-  const { isMobile } = useSidebar();
 
   return (
     <>
@@ -29,7 +28,7 @@ export default function AppSidebar() {
                  <Cake className="text-sidebar-primary" size={24} />
             </div>
             <h1 className="text-xl font-semibold font-headline">Precifica Céu</h1>
-            {isMobile && <SidebarTrigger className="ml-auto" />}
+            <SidebarTrigger className="ml-auto" />
         </div>
       </SidebarHeader>
       <SidebarContent className="p-4">
