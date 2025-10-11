@@ -45,7 +45,8 @@ export default function LoginPage() {
             } else if (error.code === 'auth/popup-blocked') {
                 setError("O pop-up de login foi bloqueado pelo seu browser. Por favor, permita pop-ups para este site e tente novamente.");
             } else if (error.code === 'auth/popup-closed-by-user') {
-                setError(null); // User closed popup, do not show an error.
+                // User closed the popup intentionally, do not show an error.
+                setError(null); 
             }
             else {
                 setError("Ocorreu um erro inesperado durante o login. Tente novamente.");
