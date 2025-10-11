@@ -20,39 +20,35 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     const [isVerifying, setIsVerifying] = useState(true);
 
     useEffect(() => {
-        // When the app loads, check if there's a sign-in redirect result
         getRedirectResult(auth)
             .then((result) => {
-                // If there's a result, it means the user just signed in.
-                // onAuthStateChanged will handle the user state update.
-                // We just need to stop showing the loader.
                 if (result) {
-                    console.log("Redirect result processed.");
+                    console.log("Redirect result processed for user:", result.user.uid);
                 }
             })
             .catch((error) => {
-                console.error("Error processing redirect result:", error);
+                console.error("Error processing redirect result:", error.code);
+                // If the specific error is 'operation-not-allowed', redirect to login with an error param
+                if (error.code === 'auth/operation-not-allowed') {
+                    router.replace('/login?error=operation-not-allowed');
+                }
             })
             .finally(() => {
-                // Whether there was a redirect or not, we're done verifying.
                 setIsVerifying(false);
             });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [auth]);
 
     useEffect(() => {
-        // This effect runs when either user loading state or verification state changes.
         if (isUserLoading || isVerifying) {
-            return; // Wait until both Firebase auth state and redirect check are done.
+            return;
         }
 
-        // If not loading and not verifying, we can make routing decisions.
         if (!user) {
-            // If there's no user and we are not on the login page, redirect to login.
             if (pathname !== '/login') {
                 router.replace('/login');
             }
         } else {
-            // If there is a user, check for seeding.
             setIsSeeding(true);
             const userSettingsRef = doc(firestore, 'settings', user.uid);
             getDoc(userSettingsRef).then(docSnap => {
@@ -79,7 +75,6 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
     }, [user, isUserLoading, isVerifying, pathname, router, firestore]);
 
-    // Show a loading screen during auth check, redirect verification, or data seeding.
     if (isUserLoading || isVerifying || isSeeding || (!user && pathname !== '/login')) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -88,11 +83,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // If we've passed all checks and the user is logged in, or we're on the login page.
-    if (user || pathname === '/login') {
+    if ((user && !isSeeding) || pathname === '/login') {
         return <>{children}</>;
     }
 
-    // Fallback, should be covered by the loading state.
     return null;
 }

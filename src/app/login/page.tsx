@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { useAuth } from '@/firebase/provider';
 import { Button } from '@/components/ui/button';
@@ -20,21 +21,22 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
     const auth = useAuth();
+    const searchParams = useSearchParams();
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const errorCode = searchParams.get('error');
+        if (errorCode === 'operation-not-allowed') {
+            setError("O login com Google não está ativado para este projeto. Por favor, ative-o no Painel do Firebase em Authentication > Sign-in method.");
+        }
+    }, [searchParams]);
 
     const handleGoogleSignIn = async () => {
         const provider = new GoogleAuthProvider();
-        try {
-            // We use a try-catch block to handle potential configuration errors.
-            await signInWithRedirect(auth, provider);
-        } catch (e: any) {
-            console.error("Firebase sign-in error:", e.code);
-            if (e.code === 'auth/operation-not-allowed') {
-                setError("O login com Google não está ativado para este projeto. Por favor, ative-o no Painel do Firebase em Authentication > Sign-in method.");
-            } else {
-                setError("Ocorreu um erro inesperado durante o login. Tente novamente.");
-            }
-        }
+        // Clear any previous errors before initiating sign-in
+        setError(null);
+        // This just starts the redirect process. The result is handled in AuthGate.
+        await signInWithRedirect(auth, provider);
     };
     
     return (
