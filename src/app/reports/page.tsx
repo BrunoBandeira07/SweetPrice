@@ -45,9 +45,9 @@ export default function ReportsPage() {
     const totalRevenue = useMemo(() => deliveredOrders.reduce((sum, o) => sum + o.total, 0), [deliveredOrders]);
     
     const totalCost = useMemo(() => {
-        return deliveredOrders.reduce((sum, order) => {
+        return (deliveredOrders || []).reduce((sum, order) => {
             const orderCost = order.items.reduce((itemSum, item) => {
-                const originalRecipe = recipes.find((r: any) => r.id === item.recipe.id);
+                const originalRecipe = (recipes || []).find((r: any) => r.id === item.recipe.id);
                 return itemSum + (originalRecipe?.totalCost || 0) * item.quantity;
             }, 0);
             return sum + orderCost;

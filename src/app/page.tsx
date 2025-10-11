@@ -63,19 +63,19 @@ export default function DashboardPage() {
 
     const monthlySales = useMemo(() => {
         if (isLoadingOrders || !orders) return 0;
-        return orders
+        return (orders || [])
             .filter(o => o.deliveryStatus === 'delivered' && new Date(o.deliveryDate).getMonth() === new Date().getMonth())
             .reduce((sum, o) => sum + o.total, 0);
     }, [orders, isLoadingOrders]);
 
     const pendingOrdersCount = useMemo(() => {
         if (isLoadingOrders || !orders) return 0;
-        return orders.filter(o => o.deliveryStatus === 'pending').length;
+        return (orders || []).filter(o => o.deliveryStatus === 'pending').length;
     }, [orders, isLoadingOrders]);
     
     const upcomingOrders = useMemo(() => {
         if (isLoadingOrders || !orders) return [];
-        return orders
+        return (orders || [])
             .filter(o => o.deliveryStatus === 'pending' && new Date(o.deliveryDate) >= new Date())
             .sort((a,b) => new Date(a.deliveryDate).getTime() - new Date(b.deliveryDate).getTime())
             .slice(0, 5); // Limit to 5 upcoming orders
@@ -83,12 +83,12 @@ export default function DashboardPage() {
 
     const criticalStockCount = useMemo(() => {
         if (isLoadingIngredients || !ingredients) return 0;
-        return ingredients.filter(i => (i.stockQuantity ?? 0) <= (i.lowStockThreshold ?? 0)).length;
+        return (ingredients || []).filter(i => (i.stockQuantity ?? 0) <= (i.lowStockThreshold ?? 0)).length;
     }, [ingredients, isLoadingIngredients]);
 
     const customerCount = useMemo(() => {
         if (isLoadingCustomers || !customers) return 0;
-        return customers.length;
+        return (customers || []).length;
     }, [customers, isLoadingCustomers]);
 
 
