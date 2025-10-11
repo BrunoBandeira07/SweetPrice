@@ -33,9 +33,11 @@ export default function RootLayout({
               <AppSidebar />
             </Sidebar>
             <SidebarInset>
-              <main className="p-4 md:p:8">
-                {children}
-              </main>
+              <div className="flex justify-center w-full">
+                <main className="w-full max-w-7xl p-4 md:p-8">
+                  {children}
+                </main>
+              </div>
             </SidebarInset>
           </SidebarProvider>
           <Toaster />
