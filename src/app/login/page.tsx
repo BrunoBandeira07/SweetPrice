@@ -57,35 +57,38 @@ export default function LoginPage() {
     };
     
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[--login-background] p-4 text-white">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
             <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
                 <div className="flex flex-col space-y-2 text-center">
-                    <Cake className="mx-auto h-10 w-10 text-white" />
-                    <h1 className="text-2xl font-semibold tracking-tight">
+                    <Cake className="mx-auto h-10 w-10 text-primary" />
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                         Entrar no Precifica Céu
                     </h1>
                 </div>
 
-                <div className='bg-[#161b22] border border-[#30363d] rounded-lg p-6 space-y-4'>
-                     {error && (
-                        <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Erro de Login</AlertTitle>
-                            <AlertDescription>
-                                {error}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                    <Button 
-                        className="w-full bg-[#21262d] text-white border border-[#30363d] hover:bg-[#30363d]" 
-                        onClick={handleGoogleSignIn}
-                    >
-                        <GoogleIcon />
-                        Continuar com Google
-                    </Button>
-                </div>
+                <Card>
+                    <CardContent className="p-6 space-y-4">
+                         {error && (
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Erro de Login</AlertTitle>
+                                <AlertDescription>
+                                    {error}
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        <Button 
+                            className="w-full" 
+                            variant="outline"
+                            onClick={handleGoogleSignIn}
+                        >
+                            <GoogleIcon />
+                            Continuar com Google
+                        </Button>
+                    </CardContent>
+                </Card>
                 
-                 <p className="px-8 text-center text-sm text-gray-400">
+                 <p className="px-8 text-center text-sm text-muted-foreground">
                     Ao clicar em continuar, você concorda com nossos{" "}
                     <a
                         href="#"
