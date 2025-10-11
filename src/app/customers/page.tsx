@@ -50,7 +50,7 @@ export default function CustomersPage() {
         if (!user || !firestore) return null;
         return query(collection(firestore, 'orders'), where('userId', '==', user.uid));
     }, [firestore, user]);
-    const { data: allOrders = [], isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
+    const { data: allOrders, isLoading: isLoadingOrders } = useCollection<Order>(ordersQuery);
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(customerFormSchema),
