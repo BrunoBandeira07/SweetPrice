@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Ingredient } from '@/lib/types';
@@ -16,37 +17,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Badge } from '../ui/badge';
-import { Skeleton } from '../ui/skeleton';
-
 
 interface IngredientsListProps {
   ingredients: Ingredient[];
   onEdit: (ingredient: Ingredient) => void;
   onDelete: (id: string) => void;
-  isLoading: boolean;
 }
 
-const IngredientsList = ({ ingredients, onEdit, onDelete, isLoading }: IngredientsListProps) => {
+const IngredientsList = ({ ingredients, onEdit, onDelete }: IngredientsListProps) => {
   const getUnitLabel = (value: string) => {
     return UNITS.find(u => u.value === value)?.label || value;
   };
-  
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex items-center space-x-4 p-2">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[250px]" />
-              <Skeleton className="h-4 w-[200px]" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   if (ingredients.length === 0) {
     return (
@@ -63,9 +44,8 @@ const IngredientsList = ({ ingredients, onEdit, onDelete, isLoading }: Ingredien
         <TableHeader>
           <TableRow>
             <TableHead>Ingrediente</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead className="text-right">Custo Un.</TableHead>
-            <TableHead>Estoque</TableHead>
+            <TableHead>Custo (Embalagem)</TableHead>
+            <TableHead className="text-right">Custo por Unidade</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -74,13 +54,10 @@ const IngredientsList = ({ ingredients, onEdit, onDelete, isLoading }: Ingredien
             <TableRow key={ingredient.id}>
               <TableCell className="font-medium">{ingredient.name}</TableCell>
               <TableCell>
-                {ingredient.category ? <Badge variant="secondary">{ingredient.category}</Badge> : <span className="text-muted-foreground">N/A</span>}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(ingredient.cost)} / {ingredient.packageSize}{ingredient.unit}
               </TableCell>
               <TableCell className="text-right">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(ingredient.unitCost || 0)}
-              </TableCell>
-               <TableCell>
-                {ingredient.stockQuantity !== undefined ? `${ingredient.stockQuantity} ${ingredient.unit}` : 'N/A'}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 4 }).format(ingredient.unitCost || 0)} / {ingredient.unit}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end space-x-2">

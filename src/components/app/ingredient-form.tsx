@@ -2,22 +2,18 @@
 "use client";
 
 import { useEffect, useMemo } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, RotateCw, CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { Plus, RotateCw } from 'lucide-react';
 
 import type { Ingredient } from '@/lib/types';
 import { UNITS } from '@/lib/constants';
-import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
 
 const formSchema = z.object({
   name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
@@ -25,18 +21,12 @@ const formSchema = z.object({
   cost: z.coerce.number().positive('O custo deve ser um número positivo.'),
   unit: z.enum(['g', 'kg', 'ml', 'l', 'un'], { required_error: 'Selecione uma unidade.' }),
   supplier: z.string().optional(),
-  category: z.string().optional(),
-  unitCost: z.coerce.number().optional(),
-  lossFactor: z.coerce.number().optional(),
-  stockQuantity: z.coerce.number().optional(),
-  lowStockThreshold: z.coerce.number().optional(),
-  expirationDate: z.string().optional(),
 });
 
 type IngredientFormValues = z.infer<typeof formSchema>;
 
 interface IngredientFormProps {
-  onSubmit: (ingredient: Omit<Ingredient, 'id' | 'userId'> & { id?: string }) => void;
+  onSubmit: (ingredient: Omit<Ingredient, 'id' | 'unitCost'>) => void;
   editingIngredient?: Ingredient;
   onCancel: () => void;
 }
@@ -49,97 +39,45 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
       packageSize: 0,
       cost: 0,
       supplier: '',
-      category: '',
-      unitCost: undefined,
-      lossFactor: undefined,
-      stockQuantity: 0,
-      lowStockThreshold: 0,
-      expirationDate: undefined,
     },
   });
 
-  const { watch, setValue, control } = form;
+  const { watch, setValue } = form;
   const packageSize = watch('packageSize');
   const cost = watch('cost');
   
   const calculatedUnitCost = useMemo(() => {
     if (packageSize > 0 && cost > 0) {
-      return cost / packageSize;
+      return (cost / packageSize).toFixed(4);
     }
-    return 0;
+    return '0.0000';
   }, [packageSize, cost]);
-
-  useEffect(() => {
-    if (calculatedUnitCost > 0) {
-       setValue('unitCost', calculatedUnitCost, { shouldValidate: true });
-    }
-  }, [calculatedUnitCost, setValue]);
 
   useEffect(() => {
     if (editingIngredient) {
       form.reset(editingIngredient);
     } else {
-      form.reset({
-        name: '',
-        packageSize: 0,
-        cost: 0,
-        supplier: '',
-        category: '',
-        unitCost: undefined,
-        lossFactor: undefined,
-        stockQuantity: 0,
-        lowStockThreshold: 0,
-        expirationDate: undefined,
-      });
+      form.reset({ name: '', packageSize: 0, cost: 0, supplier: '' });
     }
   }, [editingIngredient, form]);
 
   const handleFormSubmit = (values: IngredientFormValues) => {
-    const ingredientData = {
-      id: editingIngredient?.id,
-      ...values,
-      unitCost: calculatedUnitCost > 0 ? calculatedUnitCost : values.unitCost,
-    };
-    onSubmit(ingredientData);
-    form.reset({
-      name: '',
-      packageSize: 0,
-      cost: 0,
-      supplier: '',
-      category: '',
-      unitCost: undefined,
-      lossFactor: undefined,
-      stockQuantity: 0,
-      lowStockThreshold: 0,
-      expirationDate: undefined,
-    });
+    onSubmit(values);
+    form.reset({ name: '', packageSize: 0, cost: 0, supplier: '' });
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem className="col-span-1 md:col-span-2">
+              <FormItem className="col-span-1 lg:col-span-2">
                 <FormLabel>Nome do Ingrediente</FormLabel>
                 <FormControl>
                   <Input placeholder="Ex: Farinha de Trigo" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem className="col-span-1 md:col-span-2">
-                <FormLabel>Categoria</FormLabel>
-                <FormControl>
-                  <Input placeholder="(Opcional)" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -150,7 +88,7 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
             name="packageSize"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Volume Bruto</FormLabel>
+                <FormLabel>Tamanho (Embalagem)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ex: 1000" {...field} />
                 </FormControl>
@@ -163,7 +101,7 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
             name="unit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Un.Med</FormLabel>
+                <FormLabel>Unidade</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -185,7 +123,7 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
             name="cost"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Custo Médio (R$)</FormLabel>
+                <FormLabel>Custo (R$)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ex: 5.50" {...field} />
                 </FormControl>
@@ -193,117 +131,25 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="unitCost"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Custo Un. (R$)</FormLabel>
-                <FormControl>
-                   <Input 
-                    type="number" 
-                    readOnly 
-                    disabled 
-                    className="bg-muted/50"
-                    placeholder="Auto" 
-                    {...field} 
-                    value={field.value?.toFixed(4) || ''}
-                    />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-           <FormField
-            control={form.control}
-            name="lossFactor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fator de Perda</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ex: 1.05" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
            <FormField
             control={form.control}
             name="supplier"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Fornecedor</FormLabel>
+              <FormItem className="col-span-1 lg:col-span-2">
+                <FormLabel>Fornecedor (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="(Opcional)" {...field} />
+                  <Input placeholder="Ex: Doce Sabor" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-           <FormField
-            control={control}
-            name="stockQuantity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Qtd. em Estoque</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Ex: 500" {...field} value={field.value ?? ''}/>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="lowStockThreshold"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Alerta de Estoque Baixo</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Ex: 100" {...field} value={field.value ?? ''}/>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Controller
-              name="expirationDate"
-              control={control}
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de Vencimento</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Selecione a data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date?.toISOString())}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="space-y-2">
+            <FormLabel>Custo por Unidade</FormLabel>
+            <Input readOnly disabled value={`R$ ${calculatedUnitCost} / ${watch('unit') || 'un'}`} />
+          </div>
         </div>
         <div className="flex justify-end space-x-2 pt-2">
           {editingIngredient && (
@@ -311,8 +157,8 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
                 Cancelar
               </Button>
           )}
-          <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            {editingIngredient ? <RotateCw /> : <Plus />}
+          <Button type="submit">
+            {editingIngredient ? <RotateCw className="mr-2" /> : <Plus className="mr-2" />}
             {editingIngredient ? 'Atualizar Ingrediente' : 'Adicionar Ingrediente'}
           </Button>
         </div>
@@ -322,5 +168,3 @@ const IngredientForm = ({ onSubmit, editingIngredient, onCancel }: IngredientFor
 };
 
 export default IngredientForm;
-
-    

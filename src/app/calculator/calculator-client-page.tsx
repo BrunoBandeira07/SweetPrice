@@ -1,119 +1,44 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { Ingredient, Recipe, RecipeItem } from "@/lib/types";
-import { useSearchParams, useRouter } from 'next/navigation'
-import { useCollection } from "@/firebase/firestore/use-collection";
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase/provider";
-import { collection, doc, query, where } from "firebase/firestore";
-import { setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import IngredientForm from "@/components/app/ingredient-form";
 import IngredientsList from "@/components/app/ingredients-list";
 import RecipeBuilder from "@/components/app/recipe-builder";
 import CostAnalysis from "@/components/app/cost-analysis";
-import ImportSheetDialog from "@/components/app/import-sheet-dialog";
-import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CalculatorClientPage() {
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const ingredientsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'ingredients'), where('userId', '==', user.uid));
-  }, [firestore, user]);
-  const { data: ingredients = [], isLoading: isLoadingIngredients } = useCollection<Ingredient>(ingredientsQuery);
-  
-  const recipesQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'recipes'), where('userId', '==', user.uid));
-  }, [firestore, user]);
-  const { data: savedRecipes = [] } = useCollection<Recipe>(recipesQuery);
-
+  // Dummy data for now - will be replaced with Firebase data
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
-  const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>(undefined);
-  
-  useEffect(() => {
-    const recipeToLoadId = searchParams.get('loadRecipe');
-    if (recipeToLoadId && savedRecipes.length > 0 && ingredients.length > 0) {
-      try {
-          const recipeToLoad = savedRecipes.find(r => r.id === recipeToLoadId);
-          if (recipeToLoad) {
-            setEditingRecipe(recipeToLoad);
-            // Re-hydrate ingredients from the main ingredients list
-            const hydratedItems = recipeToLoad.items.reduce((acc, item) => {
-                if (item.type === 'ingredient' && item.ingredient?.id) {
-                    const fullIngredient = ingredients.find(i => i.id === item.ingredient!.id);
-                    if (fullIngredient) {
-                        const newItem = {
-                            ...item,
-                            ingredient: fullIngredient,
-                            cost: (fullIngredient.unitCost || 0) * item.quantity * (fullIngredient.lossFactor || 1)
-                        };
-                        acc.push(newItem);
-                    } else {
-                        console.warn(`Ingredient with ID ${item.ingredient.id} not found in the main list.`);
-                        // Optionally, inform the user that an ingredient was missing.
-                        toast({
-                          variant: "destructive",
-                          title: "Ingrediente não encontrado",
-                          description: `O ingrediente "${item.name}" não foi encontrado e não foi adicionado à receita.`,
-                        });
-                    }
-                } else {
-                    acc.push(item);
-                }
-                return acc;
-            }, [] as RecipeItem[]);
 
-            setRecipeItems(hydratedItems);
-            
-            toast({
-              title: `Receita "${recipeToLoad.name}" carregada!`,
-              description: 'Os itens foram adicionados à montagem para edição.',
-            });
-            // Clean up URL
-            router.replace('/calculator', { scroll: false });
-          }
-      } catch (error) {
-        console.error("Failed to load recipe from URL", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar receita",
-          description: "Não foi possível carregar os dados da receita selecionada."
-        });
-      }
+  const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => {
+    // Calculate unit cost before saving
+    const unitCost = ingredient.packageSize > 0 ? ingredient.cost / ingredient.packageSize : 0;
+    
+    if (editingIngredient) {
+      setIngredients(
+        ingredients.map((i) =>
+          i.id === editingIngredient.id ? { ...i, ...ingredient, unitCost } : i
+        )
+      );
+      setEditingIngredient(undefined);
+    } else {
+      setIngredients([
+        ...ingredients,
+        { ...ingredient, id: new Date().toISOString(), unitCost },
+      ]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, savedRecipes, ingredients]);
-
-  const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id' | 'userId'> & { id?: string }) => {
-    if (!user || !firestore) return;
-    const ingredientsCollection = collection(firestore, 'ingredients');
-    const docRef = ingredient.id ? doc(ingredientsCollection, ingredient.id) : doc(ingredientsCollection);
-    const dataToSave: Omit<Ingredient, 'id'> & { id: string, userId: string } = {
-      ...ingredient,
-      id: docRef.id,
-      userId: user.uid,
-    };
-    setDocumentNonBlocking(docRef, dataToSave, { merge: true });
-    setEditingIngredient(undefined);
   };
 
   const deleteIngredient = (id: string) => {
-    if (!firestore) return;
-    const docRef = doc(firestore, 'ingredients', id);
-    deleteDocumentNonBlocking(docRef);
-    setRecipeItems((prev) => prev.filter((ri) => !(ri.type === 'ingredient' && ri.ingredient?.id === id)));
+    setIngredients(ingredients.filter((i) => i.id !== id));
+    // Also remove from the current recipe if it's being used
+    setRecipeItems((prev) => prev.filter((ri) => ri.ingredient.id !== id));
   };
 
   const startEditing = (ingredient: Ingredient) => {
@@ -124,71 +49,17 @@ export default function CalculatorClientPage() {
     setEditingIngredient(undefined);
   };
 
-  const handleIngredientsImported = (importedIngredients: Omit<Ingredient, 'id' | 'userId'>[]) => {
-    if (!user || !firestore) return;
-    const ingredientsCollection = collection(firestore, 'ingredients');
-    importedIngredients.forEach(ing => {
-      const docRef = doc(ingredientsCollection);
-      const dataToSave: Omit<Ingredient, 'id'> & { id: string, userId: string } = {
-        ...ing,
-        id: docRef.id,
-        userId: user.uid,
-      };
-      setDocumentNonBlocking(docRef, dataToSave, { merge: true });
-    });
-
-    toast({
-      title: "Sucesso!",
-      description: `${importedIngredients.length} ingredientes foram importados com sucesso.`,
-    })
-  };
-
-  const handleSaveRecipe = (recipe: Omit<Recipe, 'id' | 'userId' | 'items'> & { id?: string; items: RecipeItem[] }) => {
-    if (!user || !firestore) return;
-    const recipesCollection = collection(firestore, 'recipes');
-    const docRef = recipe.id ? doc(recipesCollection, recipe.id) : doc(recipesCollection);
-    
-    // Create a serializable version of items, removing the full ingredient object
-    const serializedItems = recipe.items.map(item => {
-      const { ingredient, ...rest } = item;
-      if (item.type === 'ingredient' && ingredient) {
-        return { ...rest, ingredient: { id: ingredient.id, name: ingredient.name } };
-      }
-      return rest;
-    });
-    
-    const dataToSave = {
-      ...recipe,
-      items: serializedItems,
-      id: docRef.id,
-      userId: user.uid,
-    };
-
-    setDocumentNonBlocking(docRef, dataToSave, { merge: true });
-    toast({
-      title: 'Receita Salva!',
-      description: `A receita "${recipe.name}" foi salva no seu Livro de Receitas.`,
-    });
-    // Clear the form after saving
-    setRecipeItems([]);
-    setEditingRecipe(undefined);
-  }
-  
-  const clearRecipe = () => {
-    setRecipeItems([]);
-    setEditingRecipe(undefined);
-    toast({
-      title: 'Calculadora Limpa',
-      description: 'Você pode começar uma nova receita do zero.',
-    });
+  const handleSaveRecipe = (recipe: Omit<Recipe, 'id'>) => {
+    // For now, we'll just log it. Later this will save to Firebase.
+    console.log("Saving recipe:", { ...recipe, id: new Date().toISOString() });
+    alert(`Receita "${recipe.name}" salva! (Verifique o console)`);
   }
 
   return (
     <div className="w-full space-y-8">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle>Gerenciar Ingredientes</CardTitle>
-            <ImportSheetDialog onIngredientsImported={handleIngredientsImported}/>
           </CardHeader>
           <CardContent className="space-y-6">
             <IngredientForm
@@ -200,7 +71,6 @@ export default function CalculatorClientPage() {
               ingredients={ingredients}
               onEdit={startEditing}
               onDelete={deleteIngredient}
-              isLoading={isLoadingIngredients}
             />
           </CardContent>
         </Card>
@@ -212,8 +82,6 @@ export default function CalculatorClientPage() {
               recipeItems={recipeItems}
               setRecipeItems={setRecipeItems}
               onSaveRecipe={handleSaveRecipe}
-              onClearRecipe={clearRecipe}
-              editingRecipe={editingRecipe}
             />
           </div>
           <div className="lg:col-span-2">
