@@ -9,6 +9,8 @@ import IngredientForm from "@/components/app/ingredient-form";
 import IngredientsList from "@/components/app/ingredients-list";
 import RecipeBuilder from "@/components/app/recipe-builder";
 import CostAnalysis from "@/components/app/cost-analysis";
+import ImportSheetDialog from "@/components/app/import-sheet-dialog";
+import SubstitutionFinder from "@/components/app/substitution-finder";
 
 export default function CalculatorClientPage() {
   // Dummy data for now - will be replaced with Firebase data
@@ -16,21 +18,21 @@ export default function CalculatorClientPage() {
   const [recipeItems, setRecipeItems] = useState<RecipeItem[]>([]);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
 
-  const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id'> & { id?: string }) => {
+  const addOrUpdateIngredient = (ingredient: Omit<Ingredient, 'id' | 'userId'> & { id?: string }) => {
     // Calculate unit cost before saving
     const unitCost = ingredient.packageSize > 0 ? ingredient.cost / ingredient.packageSize : 0;
     
     if (editingIngredient) {
       setIngredients(
         ingredients.map((i) =>
-          i.id === editingIngredient.id ? { ...i, ...ingredient, unitCost } : i
+          i.id === editingIngredient.id ? { ...editingIngredient, ...ingredient, unitCost } : i
         )
       );
       setEditingIngredient(undefined);
     } else {
       setIngredients([
         ...ingredients,
-        { ...ingredient, id: new Date().toISOString(), unitCost },
+        { ...ingredient, id: new Date().toISOString(), userId: 'temp-user', unitCost },
       ]);
     }
   };
@@ -38,7 +40,17 @@ export default function CalculatorClientPage() {
   const deleteIngredient = (id: string) => {
     setIngredients(ingredients.filter((i) => i.id !== id));
     // Also remove from the current recipe if it's being used
-    setRecipeItems((prev) => prev.filter((ri) => ri.ingredient.id !== id));
+    setRecipeItems((prev) => prev.filter((ri) => ri.ingredient?.id !== id));
+  };
+  
+  const handleIngredientsImported = (importedIngredients: Omit<Ingredient, 'id' | 'userId'>[]) => {
+      const newIngredients = importedIngredients.map(ing => ({
+          ...ing,
+          id: new Date().toISOString() + Math.random(),
+          userId: 'temp-user', // replace with actual user id
+          unitCost: ing.packageSize > 0 ? ing.cost / ing.packageSize : 0,
+      }));
+      setIngredients(prev => [...prev, ...newIngredients]);
   };
 
   const startEditing = (ingredient: Ingredient) => {
@@ -59,7 +71,10 @@ export default function CalculatorClientPage() {
     <div className="w-full space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>Gerenciar Ingredientes</CardTitle>
+             <div className="flex flex-wrap items-center justify-between gap-4">
+                <CardTitle>Gerenciar Ingredientes</CardTitle>
+                <ImportSheetDialog onIngredientsImported={handleIngredientsImported} />
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <IngredientForm
