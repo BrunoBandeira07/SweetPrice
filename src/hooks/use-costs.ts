@@ -69,3 +69,5 @@ export const useCosts = () => {
 
     return { costs, electricEquipments, gasEquipments };
 }
+
+    

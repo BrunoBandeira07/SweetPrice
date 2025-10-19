@@ -18,7 +18,7 @@ export interface Ingredient {
   lossFactor?: number;
 }
 
-export type RecipeItemType = 'ingredient' | 'labor' | 'equipment' | 'other';
+export type RecipeItemType = 'ingredient' | 'labor' | 'equipment';
 
 export interface RecipeItem {
   id: string;
@@ -38,8 +38,8 @@ export interface Recipe {
     items: RecipeItem[];
     totalCost: number;
     suggestedPrice: number;
-    margin?: number;
-    marginType?: 'percentage' | 'fixed';
+    margin: number;
+    marginType: 'percentage' | 'fixed';
 }
 
 export interface Customer {
@@ -94,3 +94,5 @@ export interface UserSettings {
     userId: string;
     monthlyGoal?: number;
 }
+
+    
