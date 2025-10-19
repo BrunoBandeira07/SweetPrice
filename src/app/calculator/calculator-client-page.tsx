@@ -187,7 +187,6 @@ export default function CalculatorClientPage() {
               ingredients={ingredients || []}
               onEdit={startEditing}
               onDelete={deleteIngredient}
-              isLoading={isLoadingIngredients}
             />
           </CardContent>
         </Card>
@@ -209,5 +208,3 @@ export default function CalculatorClientPage() {
     </div>
   );
 }
-
-    

@@ -210,9 +210,9 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe,
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted p-1">
-             <Button variant={itemType === 'ingredient' ? 'primary' : 'ghost'} onClick={() => setItemType('ingredient')} className="flex-grow"><Package className="mr-2"/>Ingrediente</Button>
-             <Button variant={itemType === 'labor' ? 'primary' : 'ghost'} onClick={() => setItemType('labor')} className="flex-grow"><Clock className="mr-2"/>Mão de Obra</Button>
-             <Button variant={itemType === 'equipment' ? 'primary' : 'ghost'} onClick={() => setItemType('equipment')} className="flex-grow"><Zap className="mr-2"/>Equipamento</Button>
+             <Button variant={itemType === 'ingredient' ? 'default' : 'ghost'} onClick={() => setItemType('ingredient')} className="flex-grow"><Package className="mr-2"/>Ingrediente</Button>
+             <Button variant={itemType === 'labor' ? 'default' : 'ghost'} onClick={() => setItemType('labor')} className="flex-grow"><Clock className="mr-2"/>Mão de Obra</Button>
+             <Button variant={itemType === 'equipment' ? 'default' : 'ghost'} onClick={() => setItemType('equipment')} className="flex-grow"><Zap className="mr-2"/>Equipamento</Button>
         </div>
 
         <div className="flex flex-col md:flex-row items-end gap-2">
@@ -333,5 +333,3 @@ const RecipeBuilder = ({ ingredients, recipeItems, setRecipeItems, onSaveRecipe,
 };
 
 export default RecipeBuilder;
-
-    
