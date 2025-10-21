@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -166,7 +165,7 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+                <Button variant="outline" className="w-full justify-center" onClick={handleGoogleSignIn}>
                     <GoogleIcon />
                     Google
                 </Button>
@@ -188,5 +187,3 @@ export default function LoginPage() {
         </div>
     );
 }
-
-    
