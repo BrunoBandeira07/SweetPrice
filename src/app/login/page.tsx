@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Cake, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from '@/components/ui/input';
-import { Label } from '../ui/label';
+import { Label } from '@/components/ui/label';
 import EmailVerificationAlert from '@/components/app/email-verification-alert';
 
 
@@ -188,3 +188,5 @@ export default function LoginPage() {
         </div>
     );
 }
+
+    
