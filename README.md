@@ -1,4 +1,4 @@
-# Firebase Studio
+# Fiz coom vibe????
 
 This is a NextJS starter in Firebase Studio.
 
